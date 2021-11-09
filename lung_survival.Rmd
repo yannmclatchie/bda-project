@@ -1,0 +1,29 @@
+---
+title: "**Lung Cancer Survival Prediction with Bayesian Generalised Linear Models**"
+author: "Yann McLatchie, Arina Odnoblyudova"
+bibliography: mybib.bib
+geometry: margin=2cm, top=1in, bottom=1in
+header-includes:
+- \usepackage{amsmath}
+- \usepackage{fancyhdr}
+- \usepackage{graphicx}
+- \usepackage{fourier-orns}
+- \usepackage{titling}
+- \pagestyle{fancy}
+- \fancyhead[C]{}
+- \fancyfoot[C]{\thepage}
+- \pretitle{\begin{center}\fontsize{18bp}{18bp}\rule{\textwidth}{2pt} \vskip 0.2in}
+- \posttitle{\fontsize{11bp}{11bp}\vskip 0.075in \hrulefill \raisebox{-2.1pt}{\quad\decofourleft\decotwo\decofourright\quad}\hrulefill\end{center}}
+output:
+  pdf_document:
+    df_print: kable
+    toc: yes
+    toc_depth: 1
+    fig_caption: true
+    citation_package: natbib
+urlcolor: blue
+---
+
+```{tex setup, include=FALSE, message=FALSE, warning=FALSE}
+# tinytex:::install_prebuilt("fourier-orns")
+```

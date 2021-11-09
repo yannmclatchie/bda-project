@@ -1,0 +1,9 @@
+# Introduction
+
+This is an example introduction.
+
+```{r}
+x <- 1
+y <- 3
+x + 2 * y
+```

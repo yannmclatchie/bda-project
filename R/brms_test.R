@@ -4,7 +4,7 @@ library(tidyverse)
 library(brms)
 library(loo)
 # set number of cores
-options(mc.cores = detectCores())
+options(mc.cores = parallel::detectCores())
 
 # read lung cancer data from `survival` library
 data("cancer", package = "survival")
@@ -23,6 +23,8 @@ formula <- formula(paste("time | cens(1 - status) ~",
                          paste0(xtags, collapse = " + ")))
 # define prior assumption of variate
 prior <- set_prior("normal(0, 1)", class = "b")
+# generate model stan code
+make_stancode(formula, data, weibull, prior)
 # fit covariate GLM model with BRMS, expliciting a non-exponential family
 fit <- brm(
   formula,

@@ -20,11 +20,13 @@ xtags <- data %>%
 data %>% 
   ggplot(aes(x=time, fill=status, color=status)) +
   geom_density(alpha=0.3)
+
 # make transformed variate variable to measure linear correlation
 data$logtime <- log(data$time)
 cor.mat <- cor(data)
 cor.mat["logtime",]
-# split data into "censored" and "survived", and measure correlations
+
+# split data into "died" and "censored", and measure correlations
 # for the two independently
 cens.data <- data[data$status == 1,]
 cens.cor.mat <- cor(cens.data)
@@ -36,6 +38,11 @@ died.data.mat["logtime",]
 # depending on the value of the status column
 # we thus must decide what we are looking to predict: time, status or time|status?
 
+# plot some survival curves
+plot(survfit(Surv(time, status) ~ 1, data = data))
+plot(survfit(Surv(time, status) ~ age, data = data))
+plot(survfit(Surv(time, status) ~ sex, data = data))
+plot(survfit(Surv(time, status) ~ ph.ecog, data = data))
 
 # pairs plot
 GGally::ggpairs(data)

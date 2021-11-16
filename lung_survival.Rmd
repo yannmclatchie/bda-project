@@ -25,6 +25,7 @@ urlcolor: blue
 ---
 
 ```{tex setup, include=FALSE, message=FALSE, warning=FALSE}
+# install fourier orns LaTeX package for sexy title
 # tinytex:::install_prebuilt("fourier-orns")
 ```
 

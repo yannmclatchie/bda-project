@@ -19,10 +19,6 @@ parameters {
   // Cox regression model parameters
   vector[M] beta; // regressors
   real log_lambda0; // intercept for Cox model
-  
-  // hyperparameters
-  real eps_mu;
-  real<lower=0> eps_sigma;
 }
 
 transformed parameters {

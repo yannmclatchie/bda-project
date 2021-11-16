@@ -30,10 +30,17 @@ fit <- brm(
   formula,
   data = data,
   prior = prior,
-  family = weibull,
-  inits = 0,
-  chains = 4,
-  iter = 200
+  family = weibull
 )
 # have a look at some convergence diagnostics
 summary(fit)
+# plot posterior distribution of parameters
+posterior <- as.array(fit)
+mcmc_areas(
+  posterior,
+  prob = 0.8,
+  # 80% intervals
+  prob_outer = 0.99,
+  # 99%
+  point_est = "mean"
+)

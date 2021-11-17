@@ -31,3 +31,6 @@ urlcolor: blue
 
 ```{r child = 'rmd/intro.Rmd'}
 ```
+
+```{r child = 'rmd/weibull.Rmd'}
+```

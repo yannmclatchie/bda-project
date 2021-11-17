@@ -1,7 +1,7 @@
 data {
   int<lower=0> N; // number of data realisations
   int<lower=0> M; // feature dimensionality
-  vector<lower=0>[N] y; // variate observations
+  vector<lower=0>[N] y; // variate
   matrix[N, M] X; // design matrix
 }
 
@@ -18,36 +18,35 @@ transformed data {
 parameters {
   // GLM parameters
   vector[M] beta; // regressors
-  real intercept;  // temporary intercept for centered predictors
-  real<lower=0> shape;  // shape parameter
+  real<lower=0> alpha;  // shape parameter
 }
 
 transformed parameters {
-  // initialise linear predictor term
-  vector[N] mu = intercept + Xc * beta;
+  // compute latent predictor term and Weibull scale parameter
+  vector[N] eta = Xc * beta;
+  vector[N] sigma;
   for (n in 1:N) {
-    // apply the inverse link function
-    mu[n] = exp(mu[n]) / tgamma(1 + 1 / shape);
+    // apply the log inverse link function
+    sigma[n] = exp(eta[n]);
   }
 }
 
 model {
   // prior over regressor and shape parameters
-  beta ~ normal(0, 10);
-  intercept ~ normal(0, 10);
-  shape ~ cauchy(0, 25);
-  
+  beta ~ normal(0, 1);
+  alpha ~ gamma(1, 1);
+
   // fit model
-  y ~ weibull(shape, mu);
+  y ~ weibull(alpha, sigma);
 }
 
 generated quantities {
-  // actual population-level intercept
-  real b_intercept = intercept - dot_product(means_X, beta);
+  // compute predictive distribution for survival time
+  real ypred[N] = weibull_rng(alpha, sigma);
   
   // log-likelihood
   vector[N] log_lik;
   for (n in 1:N) {
-    log_lik[n] = weibull_lpdf(y[n] | shape, mu[n]);
+    log_lik[n] = weibull_lpdf(y[n] | alpha, sigma[n]);
   }
 }

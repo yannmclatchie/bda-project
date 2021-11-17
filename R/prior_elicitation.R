@@ -1,3 +1,10 @@
+# clean up environment
+rm(list = ls())
+gc(reset = TRUE)
+
+# set working directory
+setwd("~/Desktop/Aalto/BDA/bda-project/R")
+
 # install libraries
 library(survival)
 library(tidyverse)
@@ -18,8 +25,9 @@ xtags <- data %>%
   colnames()
 # investigate the underlying variate's distribution
 data %>% 
-  ggplot(aes(x=time, fill=status, color=status)) +
-  geom_density(alpha=0.3)
+  ggplot(aes(x=time)) +
+  geom_density()
+hist(data$time, breaks = 30)
 
 # make transformed variate variable to measure linear correlation
 data$logtime <- log(data$time)

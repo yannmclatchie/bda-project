@@ -1,0 +1,39 @@
+# Weibull Generalised Linear Model
+
+Let $y \sim \text{Weibull}(\alpha, \sigma)$, so that
+$$
+\text{Weibull}(y|\alpha,\sigma) =
+\frac{\alpha}{\sigma} \, \left( \frac{y}{\sigma} \right)^{\alpha - 1}
+\, \exp \! \left( \! - \left( \frac{y}{\sigma} \right)^{\alpha}
+\right),
+$$
+for $y \in [0,\infty), \alpha \in \mathbb{R}^+,$ and $\sigma \in \mathbb{R}^+$. 
+
+## Motivating the distribution
+
+The Weibull distribution is often used as a more flexible and complex alternative to the semi-parametric proportional hazard Cox model for modelling time to failure events, since the hazard rate is not taken to be constant with time.
+
+## The Weibull distribution as a member of the exponential family
+
+Now take $\alpha$ fixed and finite, then it can be shown that this distribution belongs to the exponential family since we can write it's probability density function
+$$
+\text{Weibull}(y|\sigma) ={\alpha y^{\alpha -1}}\exp(-y^{\alpha}\sigma^{-\alpha}-\alpha\log\sigma),
+$$
+with
+\begin{align*}
+b(y)&={\alpha y^{\alpha -1}} \\
+\eta&=\sigma^{-\alpha}\\
+T(y)&=-y^{\alpha} \\
+a(\eta)&=\alpha\log\sigma.
+\end{align*}
+
+## Defining the link function
+
+Looking at our sufficient statistic $\eta=\sigma^{-\alpha}$, it can be shown that
+$$
+\sigma=\exp{({\frac{\log\eta}{-\alpha}})}
+$$
+where we construct $\eta = \exp(\boldsymbol X\beta)$, noting that $\eta$ is strictly positive. Thus we choose a log link function for our GLM such that
+$$
+\sigma = \exp(\boldsymbol X\beta).
+$$

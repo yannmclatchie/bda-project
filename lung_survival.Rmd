@@ -29,5 +29,5 @@ urlcolor: blue
 # tinytex:::install_prebuilt("fourier-orns")
 ```
 
-```{r child = 'rmd_files/intro.Rmd'}
+```{r child = 'rmd/intro.Rmd'}
 ```

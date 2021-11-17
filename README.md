@@ -10,6 +10,6 @@ The project is organised into some subdirectories:
 
 - `R`: Contains R scripts for general data analysis and model building
 - `stan`: Contains Stan files for use in the project
-- `rmd_files`: Contrains the Rmd files for sections of the final project
+- `rmd`: Contrains the Rmd files for sections of the final project
 
-In order to knit the complete report, write Rmd code into the child files found in `rmd_files`, embed them into `lung_survival.Rmd`, and then knit the parent `lung_survival.Rmd` which produces the final PDF output.
+In order to knit the complete report, write Rmd code into the child files found in `rmd`, embed them into `lung_survival.Rmd`, and then knit the parent `lung_survival.Rmd` which produces the final PDF output.

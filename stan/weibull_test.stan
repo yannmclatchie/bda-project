@@ -32,9 +32,10 @@ transformed parameters {
 }
 
 model {
-  // prior over beta and shape parameters
+  // prior over regressor and shape parameters
   beta ~ normal(0, 10);
-  intercept ~ cauchy(0, 25);
+  intercept ~ normal(0, 10);
+  shape ~ cauchy(0, 25);
   
   // fit model
   y ~ weibull(shape, mu);

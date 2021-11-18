@@ -1,7 +1,7 @@
 data {
   int<lower=0> N; // number of data realisations
   int<lower=0> M; // feature dimensionality
-  vector<lower=0>[N] y; // variate
+  vector<lower=0>[N] y; // survival time
   matrix[N, M] X; // design matrix
 }
 
@@ -22,19 +22,16 @@ parameters {
 }
 
 transformed parameters {
-  // compute latent predictor term and Weibull scale parameter
+  // compute latent predictor term
   vector[N] eta = Xc * beta;
-  vector[N] sigma;
-  for (n in 1:N) {
-    // apply the log inverse link function
-    sigma[n] = exp(eta[n]);
-  }
+  // apply the log inverse link function
+  vector<lower=0>[N] sigma = exp(-eta / alpha);
 }
 
 model {
   // prior over regressor and shape parameters
-  beta ~ normal(0, 1);
-  alpha ~ gamma(1, 1);
+  // beta ~ normal(0, 1);
+  // alpha ~ gamma(1, 1);
 
   // fit model
   y ~ weibull(alpha, sigma);

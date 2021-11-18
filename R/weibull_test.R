@@ -40,7 +40,8 @@ wm <- rstan::stan_model(file = "../stan/weibull_test.stan")
 # print out Stan code
 print(wm)
 # learn the model parameters
-weibull_model <- rstan::sampling(wm, data = weibull_data)
+weibull_model <-
+  rstan::sampling(wm, data = weibull_data, iter = 10000)
 # verify convergence
 rstan::monitor(weibull_model)
 mcmc_rhat(rhat = rhat(weibull_model)[1:8])
@@ -75,7 +76,7 @@ mcmc_areas(
 # define the inverse link function between the latent predictor and 
 # the weibull scale parameter
 inv_link <- function(eta) {
-  sigma <- exp(eta)
+  sigma <- exp(-eta / alpha)
   return(sigma)
 }
 # we now predict the survival time of the training data and compare 
@@ -93,4 +94,3 @@ plot_df["patient"] <-
 plot_df %>%
   ggplot(aes(x = patient, y = value, color = variable)) +
   geom_point(aes(color = variable))
-

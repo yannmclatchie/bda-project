@@ -35,5 +35,5 @@ $$
 $$
 where we construct $\eta = \exp(\boldsymbol X\beta)$, noting that $\eta$ is strictly positive. Thus we choose a log link function for our GLM such that
 $$
-\sigma = \exp(\boldsymbol X\beta).
+\sigma = \exp(-\frac{\boldsymbol X\beta}{\alpha}).
 $$

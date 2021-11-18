@@ -1,9 +1,78 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # Introduction
 
-This is an example introduction.
+Lung cancer is one of the most common types of cancer for both men and women. The exploration of survival of patients with lung cancer is crucial for controlling the disease development, obtaining right treatment methods, understanding what influences the disease development. To accomplish these purposes, accurate survival analysis methods are needed.
+
+Survival analysis is the combination of different statistical methods for analyzing time to event data. Exploring survival models can be challenging, since different models from non-parametric to parametric can be used, various distributions, like exponential, Weibull, log-normal, are applicable for each concrete case. The most common model is Cox hazard model, however, it is too simple and proposes constant effect of predictor variables on survival duration throughout time.
+
+This study examines the way Bayesian approach proceeds to fit Weibull model for lifetime data of patients with advanced lung cancer analysis. Weibull approach is more flexible and hazard rate is not constant through time. For simulation Bayesian inference with MCMC is used, providing us with satisfying approximation of uncertainty and ability to use priors as domain knowledge. The model is implemented and tested with the help of R and Stan package.
+
+The code with model implementation is provided in the following GitHub repository: https://github.com/yannmclatchie/bda-project.
+
+# Data description
+
+## General description 
+
+The data used in the study shows survival of patients with advanced lung cancer from the North Central Cancer Treatment Group. It is provided in the R package: https://stat.ethz.ch/R-manual/R-devel/library/survival/html/lung.html. 
+
+Dataset contains 9 features and 228 observations, which are assumed to be independent and identically distributed. The target variable is the survival time in days. The covariates are presented by both categorical and numerical values.
+
+Special attention has to be paid for "censoring status" feature. It indicates if the patient had an event (=1) or not (=0). If patient is censored, true survival time for him is not known. Right censoring approach is used, meaning incompleteness of survival time at the right side of the follow-up period. We can get rid of it.
+
+There are three variables, needed to be explained:
+ph.ecog - ECOG performance score (0-4). 0-good condition, 4-the worst condition, much time in bad.
+ph.karno - Karnofsky performance score (bad=0-good=100). Provided by physician.
+pat.karno - Karnofsky performance score. Provided by patient.
+
+## Exploratory data analysis
+
+It is better to provide some descriptive statistics to familiarize with data.
 
 ```{r}
-x <- 1
-y <- 3
-x + 2 * y
+library(dplyr)
+library(ggplot2)
+data("cancer", package = "survival")
+```
+
+There were 67 observations with missed values or censored, which have been removed from dataset.
+Now it consists of 120 rows.
+
+```{r}
+data = cancer %>% dplyr::filter(status == 2) %>% na.omit()
+```
+
+Institutions are considered as variables, useful for hierarchical model.
+```{r}
+table(data$inst)
+```
+Moving to categorical variables (fig.1), the number of men prevails over women.
+The majority of patients are ambulatory with symptoms.
+```{r,fig.width=8,fig.height=4,fig.cap="Sex variable"}
+par(mfrow=c(1,2))
+barplot(table(data$sex), main="Sex statistics", names.arg=c("male", "female"),col=c("steelblue","cornflowerblue"))
+barplot(table(data$ph.ecog), main="ECOG score statistics", 
+        legend = c("asymptom.", "ambulatory", "in bed <50% of t", "in bed >50% of t"),
+        args.legend = list(x = "topright",inset = c(- 0.15, 0)),
+        col=c("steelblue","cornflowerblue","blue","darkblue"))
+```
+
+The distribution for continuous variables is shown in fig. 2.
+```{r,fig.width=6,fig.height=6,fig.cap="Continuous variables"}
+par(mfrow=c(3,2))
+hist(data$age, freq=FALSE, col="cornflowerblue", main="Histogram of age",xlab="")
+hist(data$ph.karno, freq=FALSE, col="cornflowerblue", main="Histogram of ph.karno",xlab="")
+hist(data$pat.karno, freq=FALSE, col="cornflowerblue", main="Histogram of pat.karno",xlab="")
+hist(data$meal.cal, freq=FALSE, col="cornflowerblue", main="Histogram of meal.cal",xlab="")
+hist(data$wt.loss, freq=FALSE, col="cornflowerblue", main="Histogram of wt.loss",xlab="")
+```
+
+It is also useful to identify if there is linear correlation between variables.
+The correlation is not that high, the only one is between ph.karno and pat.karno,
+but it is reasonable, as, eventually, patient and doctor measure the same quantity.
+```{r}
+cor(data[c(4,7,8,9,10)], method=c("pearson"))
 ```

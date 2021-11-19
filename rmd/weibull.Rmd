@@ -33,7 +33,7 @@ Looking at our sufficient statistic $\eta=\sigma^{-\alpha}$, it can be shown tha
 $$
 \sigma=\exp{({\frac{\log\eta}{-\alpha}})}
 $$
-where we construct $\eta = \exp(\boldsymbol X\beta)$, noting that $\eta$ is strictly positive. Thus we choose a log link function for our GLM such that
+where we construct $\eta = \exp(\boldsymbol X\beta)$ so that $\eta$ is strictly positive. Thus we choose a log link function for our GLM such that
 $$
 \sigma = \exp(-\frac{\boldsymbol X\beta}{\alpha}).
 $$

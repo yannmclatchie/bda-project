@@ -37,3 +37,51 @@ where we construct $\eta = \exp(\boldsymbol X\beta)$, noting that $\eta$ is stri
 $$
 \sigma = \exp(-\frac{\boldsymbol X\beta}{\alpha}).
 $$
+
+## Weibull Survival Model
+
+The density function for Weibull distributed survival times:
+
+$$
+{p(t_{i}|\alpha,\lambda_{i}) = \alpha t_{i}^{\alpha-1}\exp{(\lambda_{i}-\exp{\lambda_{i}}t_{i}^{\alpha})}}
+$$
+
+It can be rewritten as:
+
+$$
+{p(t_{i}|\alpha,\gamma_{i}) = \exp{\bigg(-\bigg(\frac{t_{i}}{\gamma_{i}}\bigg)^{\alpha}\bigg)}\frac{\alpha}{\gamma_{i}}\bigg(\frac{t_{i}}{\gamma_{i}}\bigg)^{\alpha-1}}
+$$
+Connection between $\lambda$ and $\gamma$ is:
+
+$$
+{\lambda=-\alpha \log{\gamma}}
+$$
+The survival function is:
+
+$$
+{S(t_{i}|\alpha,\lambda_{i})=\exp(-\exp(\lambda_{i})t_{i}^{\alpha})}
+$$
+The likelihood of $\alpha$ and $\lambda$ follows the equation below ($v_{i}$ - indicator, showing 0 for censored and 1 - not censored):
+
+$$
+{L(\alpha,\lambda|t)=\prod\limits_{i = 1}^n p(t_{i}|\alpha,\lambda_{i})^{v_{i}} S(t_{i}|\alpha,\lambda_{i})^{1-v_{i}}}=
+\prod\limits_{i = 1}^n (\alpha t_{i}^{\alpha-1}exp(\lambda_{i}))^{v_{i}}(exp(-exp(\lambda_{i})t_{i}^{\alpha}))
+$$
+
+If $\lambda=X\beta$, than log-likelihood function can be expressed like this:
+
+$$
+l(\alpha,\beta|t,x)=\sum\limits_{i = 1}^nv_{i}(\log(\alpha)+(\alpha-1)log(t_{i})+X_{i}\beta)-\exp(X_{i}\beta)t_{i}^{\alpha}
+$$
+
+Weakly-informative priors for parameters are used:
+
+$$
+\beta \sim Norm(0,1000)
+$$
+
+$$
+\alpha \sim Gamma(0.1,0.1)
+$$
+
+After understanding the mathematical concepts of the Weibull model for Survival analysis, the model can be implemented in Stan.

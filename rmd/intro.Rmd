@@ -1,8 +1,3 @@
----
-output:
-  pdf_document: default
-  html_document: default
----
 # Introduction
 
 Lung cancer is one of the most common types of cancer for both men and women. The exploration of survival of patients with lung cancer is crucial for controlling the disease development, obtaining right treatment methods, understanding what influences the disease development. To accomplish these purposes, accurate survival analysis methods are needed.
@@ -11,13 +6,13 @@ Survival analysis is the combination of different statistical methods for analyz
 
 This study examines the way Bayesian approach proceeds to fit Weibull model for lifetime data of patients with advanced lung cancer analysis. Weibull approach is more flexible and hazard rate is not constant through time. For simulation Bayesian inference with MCMC is used, providing us with satisfying approximation of uncertainty and ability to use priors as domain knowledge. The model is implemented and tested with the help of R and Stan package.
 
-The code with model implementation is provided in the following GitHub repository: https://github.com/yannmclatchie/bda-project.
+The code with model implementation is provided in @git.
 
 # Data description
 
 ## General description 
 
-The data used in the study shows survival of patients with advanced lung cancer from the North Central Cancer Treatment Group. It is provided in the R package: https://stat.ethz.ch/R-manual/R-devel/library/survival/html/lung.html. 
+The data used in the study shows survival of patients with advanced lung cancer from the North Central Cancer Treatment Group. It is provided in the `survival` R package, @survival-package. 
 
 Dataset contains 9 features and 228 observations, which are assumed to be independent and identically distributed. The target variable is the survival time in days. The covariates are presented by both categorical and numerical values.
 

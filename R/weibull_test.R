@@ -60,7 +60,9 @@ regression_pars <- c(
 # investigate trace plots
 color_scheme_set("mix-blue-red")
 posterior <- as.array(weibull_model)
-mcmc_trace(posterior, pars = regression_pars)
+mcmc_trace(posterior,
+           pars = regression_pars,
+           facet_args = list(nrow = 4, labeller = label_parsed))
 
 # plot posterior distribution of regressors
 mcmc_areas(
@@ -73,12 +75,29 @@ mcmc_areas(
   point_est = "mean"
 )
 
+# plot effective sample size ratio
+neff_ratio(weibull_model) %>% 
+  mcmc_neff()
+
 # define the inverse link function between the latent predictor and 
 # the weibull scale parameter
 inv_link <- function(eta) {
   sigma <- exp(-eta / alpha)
   return(sigma)
 }
+
+## cross-validation
+
+# perform approximate loo and psis-loo
+log_lik <- extract_log_lik(weibull_model, merge_chains = FALSE)
+# estimate the PSIS effective sample size and Monte Carlo error
+r_eff <- relative_eff(exp(log_lik), cores = parallel::detectCores())
+# compute loo
+loo(log_lik, r_eff = r_eff, cores = parallel::detectCores())
+# compute waic
+waic(log_lik)
+
+
 # we now predict the survival time of the training data and compare 
 # the results to the true values
 beta <- as.matrix(summary(weibull_model)$summary[, "mean"][1:7])
@@ -94,3 +113,4 @@ plot_df["patient"] <-
 plot_df %>%
   ggplot(aes(x = patient, y = value, color = variable)) +
   geom_point(aes(color = variable))
+

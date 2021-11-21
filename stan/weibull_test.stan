@@ -6,9 +6,10 @@ data {
 }
 
 transformed data {
-  // column-center the design matrix for fitting the model
   matrix[N, M] Xc;  // centered version of X without an intercept
   vector[M] means_X;  // column means of X before centering
+  
+  // column-center the design matrix for fitting the model
   for (m in 1:M) {
     means_X[m] = mean(X[, m]);
     Xc[, m] = X[, m] - means_X[m];
@@ -30,8 +31,8 @@ transformed parameters {
 
 model {
   // prior over regressor and shape parameters
-  // beta ~ normal(0, 1);
-  // alpha ~ gamma(1, 1);
+  beta ~ normal(0, 10);
+  alpha ~ cauchy(0, 10);
 
   // fit model
   y ~ weibull(alpha, sigma);

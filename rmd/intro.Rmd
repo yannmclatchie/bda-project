@@ -1,6 +1,6 @@
 # Introduction
 
-Lung cancer is one of the most common types of cancer for both men and women. The exploration of survival of patients with lung cancer is crucial for controlling the disease development, obtaining right treatment methods, understanding what influences the disease development. To accomplish these purposes, accurate survival analysis methods are needed.
+Lung cancer is one of the most common types of cancer for both men and women. The exploration of survival of patients with lung cancer is crucial for controlling the disease development, obtaining right treatment methods, understanding what influences the disease progression. To accomplish these purposes, accurate survival analysis methods are needed.
 
 Survival analysis is the combination of different statistical methods for analyzing time to event data. Exploring survival models can be challenging, since different models from non-parametric to parametric can be used, various distributions, like exponential, Weibull, log-normal, are applicable for each concrete case. The most common model is Cox hazard model, however, it is too simple and proposes constant effect of predictor variables on survival duration throughout time.
 
@@ -10,9 +10,9 @@ The code with model implementation is provided in @git.
 
 # Data description
 
-## General description 
+## General description
 
-The data used in the study shows survival of patients with advanced lung cancer from the North Central Cancer Treatment Group. It is provided in the `survival` R package, @survival-package. 
+The data used in the study shows survival of patients with advanced lung cancer from the North Central Cancer Treatment Group. It is provided in the `survival` R package, @survival-package.
 
 Dataset contains 9 features and 228 observations, which are assumed to be independent and identically distributed. The target variable is the survival time in days. The covariates are presented by both categorical and numerical values.
 
@@ -27,13 +27,13 @@ pat.karno - Karnofsky performance score. Provided by patient.
 
 It is better to provide some descriptive statistics to familiarize with data.
 
-```{r}
+```{r,warning=FALSE,message=FALSE,results=FALSE}
 library(dplyr)
 library(ggplot2)
 data("cancer", package = "survival")
 ```
 
-There were 67 observations with missed values or censored, which have been removed from dataset.
+There were 108 observations with missed or censored values, which have been removed from dataset.
 Now it consists of 120 rows.
 
 ```{r}
@@ -44,18 +44,23 @@ Institutions are considered as variables, useful for hierarchical model.
 ```{r}
 table(data$inst)
 ```
+
 Moving to categorical variables (fig.1), the number of men prevails over women.
 The majority of patients are ambulatory with symptoms.
-```{r,fig.width=8,fig.height=4,fig.cap="Sex variable"}
+
+```{r,fig.width=8,fig.height=4,fig.cap="Categorical variables"}
 par(mfrow=c(1,2))
-barplot(table(data$sex), main="Sex statistics", names.arg=c("male", "female"),col=c("steelblue","cornflowerblue"))
-barplot(table(data$ph.ecog), main="ECOG score statistics", 
+barplot(table(data$sex), main="Sex statistics", names.arg=c("male", "female"),
+        col=c("steelblue","cornflowerblue"))
+barplot(table(data$ph.ecog), main="ECOG score statistics",
         legend = c("asymptom.", "ambulatory", "in bed <50% of t", "in bed >50% of t"),
         args.legend = list(x = "topright",inset = c(- 0.15, 0)),
         col=c("steelblue","cornflowerblue","blue","darkblue"))
 ```
 
 The distribution for continuous variables is shown in fig. 2.
+The features do not follow normal distribution.
+
 ```{r,fig.width=6,fig.height=6,fig.cap="Continuous variables"}
 par(mfrow=c(3,2))
 hist(data$age, freq=FALSE, col="cornflowerblue", main="Histogram of age",xlab="")
@@ -66,8 +71,24 @@ hist(data$wt.loss, freq=FALSE, col="cornflowerblue", main="Histogram of wt.loss"
 ```
 
 It is also useful to identify if there is linear correlation between variables.
-The correlation is not that high, the only one is between ph.karno and pat.karno,
+The correlation is not that high, the only one is between ph.karno and pat.karno (0.525),
 but it is reasonable, as, eventually, patient and doctor measure the same quantity.
+
 ```{r}
 cor(data[c(4,7,8,9,10)], method=c("pearson"))
 ```
+
+## Relative studies
+
+The original data was presented in the work [1]. In [2] the comparison of semi-parametric and non-parametric models for survival
+analysis was presented, but different dataset was used, also there was no deep description of Weibull model implementation, i.e. more attention was payed to Cox regression. Study [3] provided the description of exponential models, applied to lung cancer data analysis
+with Stan code. The Weibull distribution was just mentioned their as a possibility, but no formulas and conclusions were derived for Weibull model.
+
+
+# References
+
+1. Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al. Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.
+
+2. Kumar M, Sonker PK, Saroj A, Jain A, Bhattacharjee A, Saroj RK. Parametric survival analysis using R: Illustration with lung cancer data. Cancer Rep (Hoboken). 2020;3(4):e1210. doi:10.1002/cnr2.1210
+
+3. Mohammed H AbuJarad and Athar Ali Khan. 2018, Exponential Model: A Bayesian Study With Stan. Int J Recent Sci Res. 9(8), pp. 28495-28506. DOI: http://dx.doi.org/10.24327/ijrsr.2018.0908.2470

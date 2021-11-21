@@ -53,3 +53,12 @@ bayesplot::mcmc_areas(
   # 99%
   point_est = "mean"
 )
+
+# perform approximate loo and psis-loo
+log_lik <- extract_log_lik(fit, merge_chains = FALSE)
+# estimate the PSIS effective sample size and Monte Carlo error
+r_eff <- relative_eff(exp(fit), cores = parallel::detectCores())
+# compute loo
+loo(log_lik, r_eff = r_eff, cores = parallel::detectCores())
+# compute waic
+waic(log_lik)

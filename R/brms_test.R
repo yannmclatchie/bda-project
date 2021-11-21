@@ -13,18 +13,27 @@ data <- cancer %>%
   drop_na()
 # identify covariate labels
 xtags <- data %>%
-  dplyr::select(-status, -time) %>%
+  dplyr::select(-status, -time, -inst) %>%
   colnames()
 # retrieve the number of covariates
 D <- length(xtags)
 # build model formula of the form
 # p(time) = sum(covariates)
-formula <- formula(paste("time ~",
+formula <- formula(paste("time ~ ",
                          paste0(xtags, collapse = " + ")))
 # define prior assumption of variate
-prior <- set_prior("normal(0, 10)", class = "b")
+prior <- c(
+  set_prior("normal(0, 10)", class = "b"),
+  set_prior("cauchy(0, 25)", class = "shape")
+)
 # generate model stan code
 make_stancode(formula, data, weibull, prior)
+# generate priors
+get_prior(
+  formula,
+  data,
+  weibull
+)
 # fit covariate GLM model with BRMS, expliciting a non-exponential family
 fit <- brm(
   formula,

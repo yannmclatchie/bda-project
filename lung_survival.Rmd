@@ -34,3 +34,6 @@ urlcolor: blue
 
 ```{r child = 'rmd/weibull.Rmd'}
 ```
+
+```{r child = 'rmd/conclusion.Rmd'}
+```

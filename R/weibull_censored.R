@@ -56,7 +56,7 @@ data_model = list(
 wm = rstan::stan_model(file = "../stan/weibull_censored.stan")
 # print out Stan code
 print(wm)
-# learn the model parameters
+# learn the model with parameters 4 chains, 5000 iterations for each, 2500 iterations for warm-up
 weibull_cens = rstan::sampling(wm, data = data_model, iter = 5000)
 
 # Checking convergence
@@ -104,3 +104,22 @@ bayesplot::mcmc_areas(as.matrix(weibull_cens),
                       pars = c("beta[2]","beta[3]"), prob = 0.95)
 bayesplot::mcmc_areas(as.matrix(weibull_cens), 
                       pars = c("beta[6]"), prob = 0.95)
+
+# Effective sample size ratio - majority is good
+# light: between 0.5 and 1 (high)
+# mid: between 0.1 and 0.5 (good)
+# dark: below 0.1 (low)
+
+neff_ratio(weibull_cens) %>% mcmc_neff()
+
+
+# Posterior predictive checks
+color_scheme_set("brightblue")
+yrep=extract(weibull_cens)$ypred
+bayesplot::ppc_dens_overlay(yobs, yrep[1:50, ])
+bayesplot::ppc_hist(yobs, yrep[1:8, ])
+bayesplot::ppc_dens_overlay_grouped(yobs, yrep[1:50, ], group = Xobs[,2])
+bayesplot::ppc_freqpoly_grouped(yobs, yrep[1:3,], Xobs[,2]) + yaxis_text()
+
+
+

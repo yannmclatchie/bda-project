@@ -51,12 +51,14 @@ It can be rewritten as:
 $$
 {p(t_{i}|\alpha,\gamma_{i}) = \exp{\bigg(-\bigg(\frac{t_{i}}{\gamma_{i}}\bigg)^{\alpha}\bigg)}\frac{\alpha}{\gamma_{i}}\bigg(\frac{t_{i}}{\gamma_{i}}\bigg)^{\alpha-1}}
 $$
-Connection between $\lambda$ and $\gamma$ is:
+, where $\alpha$ - shape, $\gamma$ - scale.
+
+New variable $\lambda$ is created. Connection between $\lambda$ and $\gamma$ is:
 
 $$
 {\lambda=-\alpha \log{\gamma}}
 $$
-The survival function is:
+The survival function, showing the probability that the death will be after a certain time t, is:
 
 $$
 {S(t_{i}|\alpha,\lambda_{i})=\exp(-\exp(\lambda_{i})t_{i}^{\alpha})}
@@ -73,15 +75,25 @@ If $\lambda=X\beta$, than log-likelihood function can be expressed like this:
 $$
 l(\alpha,\beta|t,x)=\sum\limits_{i = 1}^nv_{i}(\log(\alpha)+(\alpha-1)log(t_{i})+X_{i}\beta)-\exp(X_{i}\beta)t_{i}^{\alpha}
 $$
+If the data is censored, log-likelihood consists only of logarithm of survival function.
+In Stan package that can be expressed with weibull_lccdf() function, it corresponds to 
+the log of the Weibull complementary cumulative distribution function of y given shape alpha and scale sigma - 
+and it is exactly the logarithm of survival function.
+
+For clearness, complementary cumulative distribution function is:
+$$
+\bar{F}_{X}(x)=P(X>x)=1-F_{X}(x)
+$$
+, where $F_{X}(x)$ - cumulative distribution function.
+
 
 Weakly-informative priors for parameters are used:
+$$
+\beta \sim Norm(0,10)
+$$
 
 $$
-\beta \sim Norm(0,1000)
-$$
-
-$$
-\alpha \sim Gamma(0.1,0.1)
+\alpha \sim Gamma(1,1)
 $$
 
 After understanding the mathematical concepts of the Weibull model for Survival analysis, the model can be implemented in Stan.

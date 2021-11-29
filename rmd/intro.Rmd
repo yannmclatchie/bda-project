@@ -14,6 +14,8 @@ The code with model implementation is provided in @git.
 
 The data used in the study shows survival of patients with advanced lung cancer from the North Central Cancer Treatment Group. It is provided in the `survival` R package, @survival-package.
 
+The problem, tring to be solved, is connected with the prediction of survival time of patients with lung cancer.
+
 Dataset contains 9 features and 228 observations, which are assumed to be independent and identically distributed. The target variable is the survival time in days. The covariates are presented by both categorical and numerical values.
 
 Special attention has to be paid for "censoring status" feature. It indicates if the patient had an event (=1) or not (=0). If patient is censored, true survival time for him is not known. Right censoring approach is used, meaning incompleteness of survival time at the right side of the follow-up period. We can get rid of it.
@@ -33,11 +35,11 @@ library(ggplot2)
 data("cancer", package = "survival")
 ```
 
-There were 108 observations with missed or censored values, which have been removed from dataset.
-Now it consists of 120 rows.
+There were 61 observations with missed values, which have been removed from dataset.
+Now it consists of 167 rows.
 
 ```{r}
-data = cancer %>% dplyr::filter(status == 2) %>% na.omit()
+data = cancer %>% na.omit()
 ```
 
 Institutions are considered as variables, useful for hierarchical model.
@@ -80,15 +82,7 @@ cor(data[c(4,7,8,9,10)], method=c("pearson"))
 
 ## Relative studies
 
-The original data was presented in the work [1]. In [2] the comparison of semi-parametric and non-parametric models for survival
-analysis was presented, but different dataset was used, also there was no deep description of Weibull model implementation, i.e. more attention was payed to Cox regression. Study [3] provided the description of exponential models, applied to lung cancer data analysis
-with Stan code. The Weibull distribution was just mentioned their as a possibility, but no formulas and conclusions were derived for Weibull model.
-
-
-# References
-
-1. Loprinzi CL. Laurie JA. Wieand HS. Krook JE. Novotny PJ. Kugler JW. Bartel J. Law M. Bateman M. Klatt NE. et al. Prospective evaluation of prognostic variables from patient-completed questionnaires. North Central Cancer Treatment Group. Journal of Clinical Oncology. 12(3):601-7, 1994.
-
-2. Kumar M, Sonker PK, Saroj A, Jain A, Bhattacharjee A, Saroj RK. Parametric survival analysis using R: Illustration with lung cancer data. Cancer Rep (Hoboken). 2020;3(4):e1210. doi:10.1002/cnr2.1210
-
-3. Mohammed H AbuJarad and Athar Ali Khan. 2018, Exponential Model: A Bayesian Study With Stan. Int J Recent Sci Res. 9(8), pp. 28495-28506. DOI: http://dx.doi.org/10.24327/ijrsr.2018.0908.2470
+The original data was presented in the work @original in 1994, it just provided descriptive information from a lung patient-completed questionnaire, which was aggregated into dataset. 
+In @parametric-survival the comparison of semi-parametric and non-parametric models for survival
+analysis was presented, but different dataset was used, also there was no deep description of Weibull model implementation, i.e. more attention was payed to Cox regression. Study @exponential-model provided the description of exponential models, applied to lung cancer data analysis with Stan code. The Weibull distribution was just mentioned their as a possibility, but no formulas and conclusions were derived for Weibull model.
+That is why in that work two Weibull Survival models are built: hierarchical and non-hierarchical. The main approaches and theory of building survival models were used from the studies above, but the stan implementation, priors choice was made by the authors. 

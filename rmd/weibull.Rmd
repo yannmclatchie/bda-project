@@ -1,3 +1,14 @@
+# Description of two models
+
+In that work Weibull models for survival analysis are used.
+The first one - is separate Weibull model for only uncensored data.
+The second - separate Weibull model for censored data.
+Third - hierarchical Weibull model for uncensored data.
+
+At first, the choice was between exponential and weibull model, but 
+one of the main cons of the exponential distribution is that it has a 
+constant hazard function, that is why it is too simple for that example.
+
 # Weibull Generalised Linear Model
 
 Let $y \sim \text{Weibull}(\alpha, \sigma)$, so that
@@ -87,6 +98,16 @@ $$
 , where $F_{X}(x)$ - cumulative distribution function.
 
 
+# Weibull Survival Hierarchical model
+
+The dataset has the feature, showing the institutional code of each observation.
+In total, there are 17 institutions. It is obvious, that in these institutions work different professionals,
+the patient care can differ, so it is quite logical to use the hierarchical model for that feature.
+
+The alpha parameter remained the same for all the models, the priors for beta...
+
+# Weakly-informative priors
+
 Weakly-informative priors for parameters are used:
 $$
 \beta \sim Norm(0,10)
@@ -95,5 +116,8 @@ $$
 $$
 \alpha \sim Gamma(1,1)
 $$
+From the normal prior formula (especially, variance), we see that there is enough
+uncertainty about each parameter, which leads to a weak informative distribution. 
+Chosen priors do not contribute strongly to the posterior, so the data can "speak for itself". 
 
 After understanding the mathematical concepts of the Weibull model for Survival analysis, the model can be implemented in Stan.

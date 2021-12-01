@@ -3,11 +3,49 @@
 ## $\hat R$, effective sample size, and divergences
 
 ```{r}
+rhat_wm <- mcmc_rhat(rhat = rhat(weibull_model))
+rhat_hwm <- mcmc_rhat(rhat = rhat(weibull_hier))
+bayesplot_grid(rhat_wm,
+               rhat_hwm,
+               titles = c("Pooled model", "Hierarchical model"))
+```
 
+```{r}
+bayesplot_grid(mcmc_neff(neff_ratio(weibull_model)),
+               mcmc_neff(neff_ratio(weibull_hier)),
+               titles = c("Pooled model", "Hierarchical model"))
 ```
 
 ## Posterior predictive checks
 
 ## Model comparison using leave-one-out cross-validation and WAIC
 
-## Sensitivity Analysis
+```{r}
+# perform approximate loo and psis-loo
+wm_log_lik <- extract_log_lik(weibull_model, merge_chains = FALSE)
+# estimate the PSIS effective sample size
+wm_r_eff <- relative_eff(exp(wm_log_lik), cores = parallel::detectCores())
+# compute loo
+wm_loo <- loo(wm_log_lik, r_eff = wm_r_eff, cores = parallel::detectCores())
+# compute waic
+wm_waic <- waic(wm_log_lik, cores = parallel::detectCores())
+# repeat for hierarchical Weibull
+hwm_loo <- loo(weibull_hier, cores = parallel::detectCores())
+hwm_waic <- waic(weibull_hier, cores = parallel::detectCores())
+```
+
+```{r}
+# plot pareto k diagnostics for the models
+plot(wm_loo, label_points = TRUE)
+plot(hwm_loo, label_points = TRUE)
+```
+
+```{r}
+# comparison of models with loo
+loo_compare(x = list(wm_loo, hwm_loo))
+```
+
+```{r}
+# comparison of models with waic
+loo_compare(x = list(wm_waic, hwm_waic))
+```

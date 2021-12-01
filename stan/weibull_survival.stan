@@ -31,8 +31,8 @@ transformed parameters {
 
 model {
   // prior over regressor and shape parameters
-  beta ~ normal(0, 10);
-  alpha ~ cauchy(0, 10);
+  beta ~ normal(0, 1);
+  alpha ~ cauchy(0, 5);
 
   // fit model
   y ~ weibull(alpha, sigma);

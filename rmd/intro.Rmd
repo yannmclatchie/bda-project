@@ -8,9 +8,9 @@ This study examines the way Bayesian approach proceeds to fit Weibull model for 
 
 The code with model implementation is provided in @git.
 
-# Data description
+## Data description
 
-## General description
+### General description
 
 The data used in the study shows survival of patients with advanced lung cancer from the North Central Cancer Treatment Group. It is provided in the `survival` R package, @survival-package.
 
@@ -25,7 +25,7 @@ ph.ecog - ECOG performance score (0-4). 0-good condition, 4-the worst condition,
 ph.karno - Karnofsky performance score (bad=0-good=100). Provided by physician.
 pat.karno - Karnofsky performance score. Provided by patient.
 
-## Exploratory data analysis
+### Exploratory data analysis
 
 It is better to provide some descriptive statistics to familiarize with data.
 

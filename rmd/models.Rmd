@@ -3,17 +3,11 @@
 In the following section, we will motivate and define mathematically four Generalised Linear Models (GLMs) implemented in Stan and using BRMS in two cases.
 
 ```{r}
-# clean up environment
-rm(list = ls())
-gc(reset = TRUE)
-
-# set working directory
-setwd("~/Desktop/Aalto/BDA/bda-project/R")
-
 # install libraries
 library(survival)
 library(tidyverse)
 library(rstan)
+library(brms)
 library(bayesplot)
 library(loo)
 library(reshape2)
@@ -85,65 +79,76 @@ $$
 
 ### Priors
 
-In our Stan model, we wil
+In our Stan model, we will enforce two priors over each of the regressors in the linear model, and the shape parameter of our resulting Weibull distribution. Mathematically, where we have $N$ data points and $M$ covariates, the model is defined as
+\begin{align*}
+y_i &\sim \text{Weibull}(\sigma, \alpha)\,,\quad i = 1,\dots,N,\\
+\alpha &\sim \text{Half-Cauchy}(5),\\
+\sigma &= \exp\left ( -\frac{\boldsymbol X \beta}{\alpha}\right ),\\
+\beta_k \sim& N(0, 10)\,,\quad k=1,\dots,M.\\
+\end{align*}
+The choice of a Half-Cauchy prior is motivated in @taumain, so that inferences are sensitive to the choice of weakly-informative priors. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In this pooled model, we model these parameters the same across all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in.
 
 ### Implemented in Stan
 
-```{r}
+Below, we fit the model in Stan and output the Stan code for the reader.
+
+```{r weibull, warning=FALSE, message=FALSE, comment=FALSE}
 # compile and run seperate model
 wm <- rstan::stan_model(file = "../stan/weibull_survival.stan")
 # print out Stan code
 print(wm)
 # learn the model parameters
-weibull_model <-
-  rstan::sampling(wm, data = weibull_data, iter = 10000)
+weibull_model <- rstan::sampling(
+  wm,
+  iter = 10000,
+  data = weibull_data
+)
 ```
 
 ## Weibull with censored data
 
+### Implemented in Stan
+
 ## Hierarchical Weibull without censored data
+
+Here we implement a model with some global shape parameter to be learned, but independent regressor parameters for each institution. Once more, we ignore the censored data. By virtue of this, we need not worry about complex distribution functions, but do sacrifice the number of data points we can learn from for each institution. We now consider our model in terms of the same $N$ data points and $M$ regressors, but we will estimate our covariate's weight according to the institution, of which we have $J$ in total. Thus our model is defined as
+\begin{align*}
+y_{ij} &\sim \text{Weibull}(\sigma_j, \alpha)\,,\quad i = 1,\dots,N,\,j= 1,\dots,J\\
+\alpha &\sim \text{Half-Cauchy}(5),\\
+\sigma &\propto \boldsymbol X \beta,\\
+\beta_{kj} \sim& N(0, 1)\,,\quad k=1,\dots,M,\,j= 1,\dots,J.\\
+\end{align*}
+
+### Defining the link function
+
+### Priors
+
+The same priors are used for the hierarchical model as the pooled model
 
 ### Implemented in BRMS
 
-```{r}
+```{r hier_weibull, warning=FALSE, message=FALSE, comment=FALSE}
 # build model formula of the form
-formula <- formula(paste("time ~ (",
-                         paste0(xtags, collapse = " + "), 
-                         "| inst)"))
+hw_formula <- formula(paste("time ~ (",
+                            paste0(cov_labels, collapse = " + "),
+                            "| inst)"))
 # define priors over regressors and shape
-prior <- c(
-  prior_string("normal(0, 1)", class = "sd"),
-  prior_string("cauchy(0, 5)", class = "shape")
+hw_prior <- c(
+  set_prior("normal(0, 1)", class = "sd"),
+  set_prior("cauchy(0, 5)", class = "shape")
 )
 # generate model stan code
-make_stancode(formula, uncensored_data, weibull, prior)
+make_stancode(hw_formula,
+              uncensored_data,
+              weibull(link = "log", link_shape = "log"),
+              hw_prior)
 # fit hierarchical GLM model with BRMS, expliciting a non-exponential family
 weibull_hier <- brm(
-  formula,
+  formula = hw_formula,
   data = uncensored_data,
-  prior = prior,
+  prior = hw_prior,
   family = weibull(link = "log", link_shape = "log"),
-  iter = 50000,
-  cores = parallel::detectCores()
-)
-```
-
-## Cox regression in BRMS
-
-```{r}
-# define strong priors
-prior <- c(
-  prior_string("normal(0, 1)", class = "b")
-)
-# generate model stan code
-make_stancode(formula, uncensored_data, cox, prior)
-# fit hierarchical GLM model with BRMS, expliciting a non-exponential family
-cox_model <- brm(
-  formula,
-  data = uncensored_data,
-  prior = prior,
-  family = cox,
-  iter = 50000,
+  iter = 10000,
   cores = parallel::detectCores()
 )
 ```

@@ -1,4 +1,7 @@
-# Issues and potential improvements.
+# Conclusion
+
+## Issues and improvements
+
 The problem may be that the distribution is rather skewed.
 Therefore, it is rather difficult to choose for it a competent distribution.
 Maybe in the future it'd be better to try one more distribution - gamma or such extensions of exponential, like: 
@@ -7,10 +10,7 @@ exponentiated exponential (has properties, similar to Gamma distribution, but su
 Also, maybe it'd be worth to pay more attention to features and apply transformation or even extraction to them.
 Moreover, the priors can be tested even more accurately, variant like half-cauchy can be tried.
 
-# Conclusion what was learned from the data analysis.
-
-
-# Self-reflection of what the group learned while making the project
+## Self-reflection and learnings
 
 The group learnt a lot about the applications of MCMC methods to Survival analysis.
 Previously, some of us did not even know about the concept of Survival analysis, about such terms, like

@@ -86,7 +86,7 @@ y_i &\sim \text{Weibull}(\sigma, \alpha)\,,\quad i = 1,\dots,N,\\
 \sigma &= \exp\left ( -\frac{\boldsymbol X \beta}{\alpha}\right ),\\
 \beta_k \sim& N(0, 10)\,,\quad k=1,\dots,M.\\
 \end{align*}
-The choice of a Half-Cauchy prior is motivated in @taumain, so that inferences are sensitive to the choice of weakly-informative priors. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In this pooled model, we model these parameters the same across all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in.
+The choice of a Half-Cauchy prior is motivated in @taumain, so that inferences are sensitive to the choice of weakly-informative priors. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In this pooled model, we model these parameters the same across all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in. This is seen visually below in Figure \ref{}.
 
 ### Implemented in Stan
 
@@ -118,6 +118,7 @@ y_{ij} &\sim \text{Weibull}(\sigma_j, \alpha)\,,\quad i = 1,\dots,N,\,j= 1,\dots
 \sigma &\propto \boldsymbol X \beta,\\
 \beta_{kj} \sim& N(0, 1)\,,\quad k=1,\dots,M,\,j= 1,\dots,J.\\
 \end{align*}
+This is seen visually below in Figure \ref{}.
 
 ### Defining the link function
 

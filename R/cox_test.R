@@ -4,54 +4,67 @@ library(tidyverse)
 library(rstan)
 library(bayesplot)
 library(loo)
+library(splines2)
 # set number of cores
 options(mc.cores = parallel::detectCores())
 
 # read lung cancer data from `survival` library
 data("cancer", package = "survival")
-# build dataset
+# build dataset without censored data
 data <- cancer %>%
+  filter(status == 2) %>%
   drop_na()
-# identify covariate labels and build design matrix
-cov_labels <- data %>%
-  dplyr::select(-status, -time) %>%
+# identify covariate labels
+xtags <- data %>%
+  dplyr::select(-status, -time, -inst) %>%
   colnames()
-
-X <- as.data.frame(data[cov_labels])
-# print(dim(X))
-# [1] 167   8
-y <- data$time
-# build data list for Stan model
-cox_data = list(
-  y = y, X = X, N = length(y), M = ncol(X)
+# retrieve the number of covariates
+D <- length(xtags)
+# build model formula of the form
+formula <- formula(paste("time ~ ",
+                         paste0(xtags, collapse = " + ")))
+# define priors over regressors and shape
+prior <- get_prior(
+  formula,
+  data,
+  cox
 )
+prior <- c(
+  prior_string("normal(0, 1)", class = "b")
+)
+# generate model stan code
+make_stancode(formula, data, cox, prior)
+# fit hierarchical GLM model with BRMS, expliciting a non-exponential family
+cox_model <- brm(
+  formula,
+  data = data,
+  prior = prior,
+  family = cox,
+  iter = 50000,
+  cores = parallel::detectCores()
+)
+# have a look at some convergence diagnostics
+summary(cox_model)
 
-# compile and run seperate model
-cm <- rstan::stan_model(file = "../stan/cox_test.stan")
-# print out Stan code
-print(cm)
-# learn the model parameters
-cox_model <- rstan::sampling(cm, data = cox_data)
-# verify convergence
-rstan::monitor(cox_model)
+# plot rhat
+mcmc_rhat(rhat = rhat(cox_model))
 
-# plot posterior distribution of regressors
+# plot posterior distribution of parameters
 posterior <- as.array(cox_model)
-mcmc_areas(
+bayesplot::mcmc_areas(
   posterior,
-  pars = c(
-    "beta[1]",
-    "beta[2]",
-    "beta[3]",
-    "beta[4]",
-    "beta[5]",
-    "beta[6]",
-    "beta[7]",
-    "beta[8]"
-  ),
   prob = 0.8,
   # 80% intervals
   prob_outer = 0.99,
   # 99%
   point_est = "mean"
 )
+
+# perform approximate loo and psis-loo
+log_lik <- extract_log_lik(cox_model, merge_chains = FALSE)
+# estimate the PSIS effective sample size and Monte Carlo error
+r_eff <- relative_eff(exp(cox_model), cores = parallel::detectCores())
+# compute loo
+loo(cox_model, cores = parallel::detectCores())
+# compute waic
+waic(cox_model, cores = parallel::detectCores())

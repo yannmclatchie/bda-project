@@ -1,0 +1,149 @@
+# Description of models
+
+In the following section, we will motivate and define mathematically four Generalised Linear Models (GLMs) implemented in Stan and using BRMS in two cases.
+
+```{r}
+# clean up environment
+rm(list = ls())
+gc(reset = TRUE)
+
+# set working directory
+setwd("~/Desktop/Aalto/BDA/bda-project/R")
+
+# install libraries
+library(survival)
+library(tidyverse)
+library(rstan)
+library(bayesplot)
+library(loo)
+library(reshape2)
+library(ggplot2)
+library(splines2)
+# set number of cores
+options(mc.cores = parallel::detectCores())
+
+# read lung cancer data from `survival` library
+data("cancer", package = "survival")
+# build dataset from only those non-censored data points
+uncensored_data <- cancer %>%
+  filter(status == 2) %>%
+  drop_na()
+# identify covariate labels and build design matrix
+cov_labels <- uncensored_data %>%
+  dplyr::select(-status,-time,-inst) %>%
+  colnames()
+# build design matrix
+X <- as.matrix(uncensored_data[cov_labels])
+# print(dim(X))
+# [1] 120   7
+y <- uncensored_data$time
+# build data list for Stan model
+weibull_data = list(
+  y = y, X = X, N = length(y), M = ncol(X)
+)
+```
+
+## Weibull without censored data
+
+Let $y \sim \text{Weibull}(\alpha, \sigma)$, so that
+$$
+\text{Weibull}(y|\alpha,\sigma) =
+\frac{\alpha}{\sigma} \, \left( \frac{y}{\sigma} \right)^{\alpha - 1}
+\, \exp \! \left( \! - \left( \frac{y}{\sigma} \right)^{\alpha}
+\right),
+$$
+for $y \in [0,\infty), \alpha \in \mathbb{R}^+,$ and $\sigma \in \mathbb{R}^+$. 
+
+### Motivating the distribution
+
+The Weibull distribution is often used as a more flexible and complex alternative to the semi-parametric proportional hazard Cox model for modelling time to failure events, since the hazard rate is not taken to be constant with time.
+
+### The Weibull distribution as a member of the exponential family
+
+Now take $\alpha$ fixed and finite, then it can be shown that this distribution belongs to the exponential family since we can write it's probability density function
+$$
+\text{Weibull}(y|\sigma) ={\alpha y^{\alpha -1}}\exp(-y^{\alpha}\sigma^{-\alpha}-\alpha\log\sigma),
+$$
+with
+\begin{align*}
+b(y)&={\alpha y^{\alpha -1}} \\
+\eta&=\sigma^{-\alpha}\\
+T(y)&=-y^{\alpha} \\
+a(\eta)&=\alpha\log\sigma.
+\end{align*}
+
+### Defining the link function
+
+Looking at our sufficient statistic $\eta=\sigma^{-\alpha}$, it can be shown that
+$$
+\sigma=\exp{({\frac{\log\eta}{-\alpha}})}
+$$
+where we construct $\eta = \exp(\boldsymbol X\beta)$ so that $\eta$ is strictly positive. Thus we choose a log link function for our GLM such that
+$$
+\sigma = \exp(-\frac{\boldsymbol X\beta}{\alpha}).
+$$
+
+### Priors
+
+In our Stan model, we wil
+
+### Implemented in Stan
+
+```{r}
+# compile and run seperate model
+wm <- rstan::stan_model(file = "../stan/weibull_survival.stan")
+# print out Stan code
+print(wm)
+# learn the model parameters
+weibull_model <-
+  rstan::sampling(wm, data = weibull_data, iter = 10000)
+```
+
+## Weibull with censored data
+
+## Hierarchical Weibull without censored data
+
+### Implemented in BRMS
+
+```{r}
+# build model formula of the form
+formula <- formula(paste("time ~ (",
+                         paste0(xtags, collapse = " + "), 
+                         "| inst)"))
+# define priors over regressors and shape
+prior <- c(
+  prior_string("normal(0, 1)", class = "sd"),
+  prior_string("cauchy(0, 5)", class = "shape")
+)
+# generate model stan code
+make_stancode(formula, uncensored_data, weibull, prior)
+# fit hierarchical GLM model with BRMS, expliciting a non-exponential family
+weibull_hier <- brm(
+  formula,
+  data = uncensored_data,
+  prior = prior,
+  family = weibull(link = "log", link_shape = "log"),
+  iter = 50000,
+  cores = parallel::detectCores()
+)
+```
+
+## Cox regression in BRMS
+
+```{r}
+# define strong priors
+prior <- c(
+  prior_string("normal(0, 1)", class = "b")
+)
+# generate model stan code
+make_stancode(formula, uncensored_data, cox, prior)
+# fit hierarchical GLM model with BRMS, expliciting a non-exponential family
+cox_model <- brm(
+  formula,
+  data = uncensored_data,
+  prior = prior,
+  family = cox,
+  iter = 50000,
+  cores = parallel::detectCores()
+)
+```

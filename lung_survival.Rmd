@@ -21,6 +21,7 @@ output:
     toc_depth: 1
     fig_caption: true
     citation_package: natbib
+    number_sections: true
 urlcolor: blue
 ---
 
@@ -32,7 +33,10 @@ urlcolor: blue
 ```{r child = 'rmd/intro.Rmd'}
 ```
 
-```{r child = 'rmd/weibull.Rmd'}
+```{r child = 'rmd/models.Rmd'}
+```
+
+```{r child = 'rmd/diagnostics.Rmd'}
 ```
 
 ```{r child = 'rmd/conclusion.Rmd'}

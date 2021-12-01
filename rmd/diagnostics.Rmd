@@ -1,0 +1,13 @@
+# Diagnostics and performance
+
+## $\hat R$, effective sample size, and divergences
+
+```{r}
+
+```
+
+## Posterior predictive checks
+
+## Model comparison using leave-one-out cross-validation and WAIC
+
+## Sensitivity Analysis

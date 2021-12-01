@@ -12,6 +12,7 @@ library(rstan)
 library(bayesplot)
 library(loo)
 library(reshape2)
+library(ggplot2)
 # set number of cores
 options(mc.cores = parallel::detectCores())
 
@@ -36,7 +37,7 @@ weibull_data = list(
 )
 
 # compile and run seperate model
-wm <- rstan::stan_model(file = "../stan/weibull.stan")
+wm <- rstan::stan_model(file = "../stan/weibull_survival.stan")
 # print out Stan code
 print(wm)
 # learn the model parameters
@@ -44,7 +45,7 @@ weibull_model <-
   rstan::sampling(wm, data = weibull_data, iter = 10000)
 # verify convergence
 rstan::monitor(weibull_model)
-mcmc_rhat(rhat = rhat(weibull_model)[1:8])
+mcmc_rhat(rhat = rhat(weibull_model))
 # take note of important parameters
 regression_pars <- c(
   "beta[1]",
@@ -64,6 +65,10 @@ mcmc_trace(posterior,
            pars = regression_pars,
            facet_args = list(nrow = 4, labeller = label_parsed))
 
+# effective sample size
+neff_weibull <- neff_ratio(weibull_model)
+mcmc_neff(neff_weibull)
+
 # plot posterior distribution of regressors
 mcmc_areas(
   posterior,
@@ -78,6 +83,19 @@ mcmc_areas(
 # plot effective sample size ratio
 neff_ratio(weibull_model) %>% 
   mcmc_neff()
+# compare ess for centered model compared to non-centered model
+# compile and run seperate model
+noncentered_wm <- rstan::stan_model(file = "../stan/weibull_non-centered.stan")
+# print out Stan code
+print(noncentered_wm)
+# learn the model parameters
+noncentered_weibull_model <-
+  rstan::sampling(noncentered_wm, data = weibull_data, iter = 10000)
+rstan::monitor(noncentered_weibull_model)
+neff_cm <- neff_ratio(weibull_model, pars = regression_pars)
+neff_ncm <- neff_ratio(noncentered_weibull_model, pars = regression_pars)
+mcmc_neff(neff_cm)
+mcmc_neff(neff_ncm)
 
 # define the inverse link function between the latent predictor and 
 # the weibull scale parameter

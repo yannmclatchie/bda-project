@@ -15,8 +15,9 @@ options(mc.cores = parallel::detectCores())
 
 # read lung cancer data from `survival` library
 data("cancer", package = "survival")
-# build dataset
+# build dataset without censored data
 data <- cancer %>%
+  filter(status == 2) %>%
   drop_na()
 # identify covariate labels
 xtags <- data %>%
@@ -28,23 +29,30 @@ D <- length(xtags)
 formula <- formula(paste("time ~ (",
                          paste0(xtags, collapse = " + "), 
                          "| inst)"))
-# define prior assumption of variate
-prior <- get_prior(formula,
-          data,
-          family = weibull)
+# define priors over regressors and shape
+prior <- c(
+  prior_string("normal(0, 1)", class = "sd"),
+  prior_string("cauchy(0, 5)", class = "shape")
+)
 # generate model stan code
 make_stancode(formula, data, weibull, prior)
 # fit hierarchical GLM model with BRMS, expliciting a non-exponential family
-fit <- brm(
+weibull_hier <- brm(
   formula,
   data = data,
   prior = prior,
-  family = weibull
+  family = weibull(link = "log", link_shape = "log"),
+  iter = 50000,
+  cores = parallel::detectCores()
 )
 # have a look at some convergence diagnostics
-summary(fit)
+summary(weibull_hier)
+
+# plot rhat
+mcmc_rhat(rhat = rhat(weibull_hier))
+
 # plot posterior distribution of parameters
-posterior <- as.array(fit)
+posterior <- as.array(weibull_hier)
 bayesplot::mcmc_areas(
   posterior,
   prob = 0.8,
@@ -55,10 +63,10 @@ bayesplot::mcmc_areas(
 )
 
 # perform approximate loo and psis-loo
-log_lik <- extract_log_lik(fit, merge_chains = FALSE)
+log_lik <- extract_log_lik(weibull_hier, merge_chains = FALSE)
 # estimate the PSIS effective sample size and Monte Carlo error
-r_eff <- relative_eff(exp(fit), cores = parallel::detectCores())
+r_eff <- relative_eff(exp(weibull_hier), cores = parallel::detectCores())
 # compute loo
-loo(log_lik, r_eff = r_eff, cores = parallel::detectCores())
+loo(weibull_hier, cores = parallel::detectCores())
 # compute waic
-waic(log_lik)
+waic(weibull_hier, cores = parallel::detectCores())

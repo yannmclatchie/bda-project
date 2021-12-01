@@ -36,7 +36,7 @@ weibull_data = list(
 )
 
 # compile and run seperate model
-wm <- rstan::stan_model(file = "../stan/weibull_test.stan")
+wm <- rstan::stan_model(file = "../stan/weibull.stan")
 # print out Stan code
 print(wm)
 # learn the model parameters

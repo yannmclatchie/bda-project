@@ -23,7 +23,7 @@ data("cancer", package = "survival")
 data = cancer %>% na.omit()
 
 # Censoring status is transformed to the column with 0-censored, 1-observed.
-# From binary variable "sex" dummies are made and the continuous variables are centered.
+# The continuous variables are centered.
 X=data
 X$status[X$status==1] = 0
 X$status[X$status==2] = 1
@@ -52,7 +52,7 @@ data_model = list(
   Ncen = nrow(Xcens)
 )
 
-# compile and run seperate censored model
+# compile and run separate censored model
 wm = rstan::stan_model(file = "../stan/weibull_censored.stan")
 # print out Stan code
 print(wm)
@@ -121,5 +121,10 @@ bayesplot::ppc_hist(yobs, yrep[1:8, ])
 bayesplot::ppc_dens_overlay_grouped(yobs, yrep[1:50, ], group = Xobs[,2])
 bayesplot::ppc_freqpoly_grouped(yobs, yrep[1:3,], Xobs[,2]) + yaxis_text()
 
-
-
+# Computation of the PSIS-LOO elpd values and the k-values
+log_lik_sep = extract_log_lik(weibull_cens, merge_chains = FALSE)
+r_eff_sep = relative_eff(exp(log_lik_sep), cores = 2)
+loo_sep = loo(log_lik_sep, r_eff = r_eff_sep, cores = 2)
+print(loo_sep)
+psis_sep = psis(-log_lik_sep, r_eff = r_eff_sep)
+plot(psis_sep)

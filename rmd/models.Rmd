@@ -107,7 +107,118 @@ weibull_model <- rstan::sampling(
 
 ## Weibull with censored data
 
+The density function for Weibull distributed survival times:
+
+$$
+{p(t_{i}|\alpha,\lambda_{i}) = \alpha t_{i}^{\alpha-1}\exp{(\lambda_{i}-\exp{\lambda_{i}}t_{i}^{\alpha})}}
+$$
+
+It can be rewritten as:
+
+$$
+{p(t_{i}|\alpha,\gamma_{i}) = \exp{\bigg(-\bigg(\frac{t_{i}}{\gamma_{i}}\bigg)^{\alpha}\bigg)}\frac{\alpha}{\gamma_{i}}\bigg(\frac{t_{i}}{\gamma_{i}}\bigg)^{\alpha-1}}
+$$
+, where $\alpha$ - shape, $\gamma$ - scale.
+
+New variable $\lambda$ is created. Connection between $\lambda$ and $\gamma$ is:
+
+$$
+{\lambda=-\alpha \log{\gamma}}
+$$
+The survival function, showing the probability that the death will be after a certain time t, is:
+
+$$
+{S(t_{i}|\alpha,\lambda_{i})=\exp(-\exp(\lambda_{i})t_{i}^{\alpha})}
+$$
+The likelihood of $\alpha$ and $\lambda$ follows the equation below ($v_{i}$ - indicator, showing 0 for censored and 1 - not censored):
+
+$$
+{L(\alpha,\lambda|t)=\prod\limits_{i = 1}^n p(t_{i}|\alpha,\lambda_{i})^{v_{i}} S(t_{i}|\alpha,\lambda_{i})^{1-v_{i}}}=
+\prod\limits_{i = 1}^n (\alpha t_{i}^{\alpha-1}exp(\lambda_{i}))^{v_{i}}(exp(-exp(\lambda_{i})t_{i}^{\alpha}))
+$$
+
+If $\lambda=X\beta$, than log-likelihood function can be expressed like this:
+
+$$
+l(\alpha,\beta|t,x)=\sum\limits_{i = 1}^nv_{i}(\log(\alpha)+(\alpha-1)log(t_{i})+X_{i}\beta)-\exp(X_{i}\beta)t_{i}^{\alpha}
+$$
+If the data is censored, log-likelihood consists only of logarithm of survival function.
+In Stan package that can be expressed with weibull_lccdf() function, it corresponds to 
+the log of the Weibull complementary cumulative distribution function of y given shape alpha and scale sigma - 
+and it is exactly the logarithm of survival function.
+
+For clearness, complementary cumulative distribution function is:
+$$
+\bar{F}_{X}(x)=P(X>x)=1-F_{X}(x)
+$$
+, where $F_{X}(x)$ - cumulative distribution function.
+
+### Priors
+
+Weakly-informative priors for parameters are used. There are 7 covariates in the model, for each regressor betas can take positive and negative values, however, these values are not likely to be very large. For them, normal distribution $N(0,10)$ can be used.  Also, the prior has to be made for the shape parameter, $Gamma(1,1)$ is a variant, as the majority of the variance is not too close to zero, it has rather long tail. 
+
+$$
+\beta \sim Norm(0,10)
+$$
+
+$$
+\alpha \sim Gamma(1,1)
+$$
+Chosen priors do not contribute strongly to the posterior, so the data can "speak for itself".
+
 ### Implemented in Stan
+
+Data preparation
+```{r, warning=FALSE, message=FALSE, comment=FALSE}
+# read lung cancer data from "survival' library
+data("cancer", package = "survival")
+
+# omittimg NAs
+data = cancer %>% na.omit()
+
+# Censoring status is transformed to the column with 0-censored, 1-observed.
+# The continuous variables are centered.
+X=data
+X$status[X$status==1] = 0
+X$status[X$status==2] = 1
+#X$male = ifelse(X$sex==1,1,0)
+#X$female = ifelse(X$sex==2,1,0)
+X$age=X$age-mean(X$age)
+X$meal.cal=X$meal.cal-mean(X$meal.cal)
+X$wt.loss=X$wt.loss-mean(X$wt.loss)
+
+Xcens=X[X$status==0,]
+Xcens = Xcens[-c(1,2,3)]
+ycens=X$time[X$status==0]
+
+Xobs=X[X$status==1,]
+Xobs = as.matrix(Xobs[-c(1,2,3)])
+yobs=X$time[X$status==1]
+```
+
+Building data list for Stan model
+```{r, warning=FALSE, message=FALSE, comment=FALSE}
+data_model = list(
+  yobs = yobs,
+  Xobs = Xobs,
+  N = nrow(Xobs),
+  M = ncol(Xobs),
+  ycen = ycens,
+  Xcen = Xcens,
+  Ncen = nrow(Xcens)
+)
+```
+
+Running model
+```{r, warning=FALSE, message=FALSE, comment=FALSE}
+# compile and run censored model
+wm = rstan::stan_model(file = "../stan/weibull_censored.stan")
+# print out Stan code
+print(wm)
+# learn the model with parameters 4 chains, 5000 iterations for each, 2500 iterations for warm-up
+weibull_cens = rstan::sampling(wm, data = data_model, iter = 5000)
+```
+
 
 ## Hierarchical Weibull without censored data
 

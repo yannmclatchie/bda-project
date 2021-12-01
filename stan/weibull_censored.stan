@@ -16,13 +16,12 @@ parameters {
 transformed parameters {
   // Log inverse link function
   vector<lower=0>[N] sigma = exp(-Xobs*beta / alpha);
-
 }
 
 model {
   // priors
   beta ~ normal(0, 10);
-  alpha ~ gamma(1, 1);
+  alpha ~ gamma(1,1);
 
   // fitting model
   yobs ~ weibull(alpha, sigma);

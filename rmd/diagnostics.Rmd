@@ -26,7 +26,18 @@ bayesplot_grid(
 
 We find that both the pooled models (not considered censored, and considered censored data respectively) have very few parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data have many such parameters with $n_{\text{eff}}$ small, which leads us to be doubtful of the models future performance.
 
-## Posterior predictive checks
+## Divergence parameters
+
+Censored model:
+There is small number of divergent transitions, which is identified by divergent__ being 1.
+Also, chains have a treedepth__ of at most 10 and the default is 10. The maximum number is not exceeded,
+so the sampler does not hit its limit on the number of leapfrog steps, taken per iteration.
+```{r}
+wmc_sampler_params = get_sampler_params(weibull_cens, inc_warmup = TRUE)
+summary(do.call(rbind, wmc_sampler_params), digits = 2)
+```
+
+## Intervals for posterior data
 
 We will now plot the posterior distributions of the weights of our regressors in our GLMs and the shape parameter $\alpha$ for our three models, starting with our pooled GLM not considering censored data.
 
@@ -96,9 +107,19 @@ $$
 $$
 Equally, we find a shape parameter $\alpha$, also significantly non-zero, but existing just below the values of $2$.
 
+## Posterior predictive checks
+
+For censored model the posterior draws are similar to the original distribution, however, there are two main differences.
+In original data the peak of the distribution is larger, also, it is a little bit more narrow, for model draws sometimes wider distribution is received.
+```{r}
+color_scheme_set("brightblue")
+yrep_cens=extract(weibull_cens)$ypred
+bayesplot::ppc_hist(yobs, yrep_cens[1:8, ])
+```
+
 ## Model comparison using leave-one-out cross-validation and WAIC
 
-Having briefly examined the posterior distributions of our models, we now investigate the PSIS-LOO and WAIC values for model comparison, in the aim of determining which of our models is "best" for our purposes.
+Having briefly examined the posterior distributions of our models, we now investigate the PSIS-LOO and WAIC values for model comparison, in the aim of determining which of our models is "best" for our purposes. Note, that PSIS-LOO is more accurate than WAIC criteria as it has better diagnostics.
 
 ```{r}
 # perform approximate loo and psis-loo
@@ -145,3 +166,16 @@ wm_waic
 cwm_waic
 hwm_waic
 ```
+
+The best model is.....
+After her comes the....
+
+## Predictive performance assessment
+
+Elpd_loo is better than, for example, MSE for continuous variable prediction, as it evaluates the whole predictive distribution and not just the mean. 
+
+
+## Prior sensitivity analysis
+The sensitivity of posterior inference about θ to the proposed prior distribution has been checked for models.
+The dataset in that work is not small and posterior inferences based on a large sample are not particularly sensitive to the prior distribution.
+

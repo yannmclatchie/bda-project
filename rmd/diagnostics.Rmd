@@ -29,7 +29,7 @@ bayesplot_grid(
 
 We find that both the pooled models (not considered censored, and considered censored data respectively) have very few parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data have many such parameters with $n_{\text{eff}}$ small, which leads us to be doubtful of the models future performance.
 
-## Posterior predictive checks
+## Intervals for posterior data
 
 We will now plot the posterior distributions of the weights of our regressors in our GLMs and the shape parameter $\alpha$ for our three models, starting with our pooled GLM not considering censored data.
 
@@ -99,6 +99,15 @@ $$
 \sigma = \exp(\boldsymbol X \beta).
 $$
 Equally, we find a shape parameter $\alpha$, also significantly non-zero, but existing just below the values of $2$.
+
+## Posterior predictive checks
+
+For censored model
+```{r}
+color_scheme_set("brightblue")
+yrep_cens=extract(weibull_cens)$ypred
+bayesplot::ppc_hist(yobs, yrep_cens[1:8, ])
+```
 
 ## Model comparison using leave-one-out cross-validation and WAIC
 

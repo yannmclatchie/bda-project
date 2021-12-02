@@ -102,7 +102,8 @@ Equally, we find a shape parameter $\alpha$, also significantly non-zero, but ex
 
 ## Posterior predictive checks
 
-For censored model
+For censored model the posterior draws are similar to the original distribution, however, there are two main differences.
+In original data the peak of the distribution is larger, also, it is a little bit more narrow, for model draws sometimes wider distribution is received.
 ```{r}
 color_scheme_set("brightblue")
 yrep_cens=extract(weibull_cens)$ypred

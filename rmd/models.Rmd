@@ -12,6 +12,7 @@ library(bayesplot)
 library(loo)
 library(reshape2)
 library(ggplot2)
+library(data.table)
 # set number of cores
 options(mc.cores = parallel::detectCores())
 # read lung cancer data from `survival` library
@@ -73,7 +74,7 @@ The choice of a Half-Cauchy prior is motivated in @taumain, so that inferences a
 
 Below, we fit the model in Stan and output the Stan code for the reader.
 
-```{r weibull, warning=FALSE, message=FALSE, comment=FALSE}
+```{r weibull, warning=FALSE, message=FALSE}
 # build dataset from only those non-censored data points
 uncensored_data <- cancer %>%
   filter(status == 2) %>%
@@ -99,7 +100,7 @@ print(wm)
 # learn the model parameters
 weibull_model <- rstan::sampling(
   wm,
-  iter = 25000,
+  iter = 10000,
   data = weibull_data,
   algorithm = "NUTS"
 )
@@ -164,7 +165,7 @@ Chosen priors do not contribute strongly to the posterior, so the data can "spea
 ### Implemented in Stan
 
 Data preparation
-```{r, warning=FALSE, message=FALSE, comment=FALSE}
+```{r, warning=FALSE, message=FALSE}
 # read lung cancer data from "survival' library
 data("cancer", package = "survival")
 
@@ -207,13 +208,13 @@ data_model = list(
 ```
 
 Running model
-```{r censored, warning=FALSE, message=FALSE, comment=FALSE}
+```{r censored, warning=FALSE, message=FALSE}
 # compile and run censored model
 cwm = rstan::stan_model(file = "../stan/weibull_censored.stan")
 # print out Stan code
 print(cwm)
 # learn the model with parameters 4 chains, 5000 iterations for each, 2500 iterations for warm-up
-weibull_cens = rstan::sampling(cwm, data = data_model, iter = 25000)
+weibull_cens = rstan::sampling(cwm, data = data_model, iter = 10000)
 ```
 
 
@@ -236,7 +237,7 @@ The same priors are used for the hierarchical model as the pooled model
 
 ### Implemented in Stan
 
-```{r hier_weibull, warning=FALSE, message=FALSE, comment=FALSE}
+```{r hier_weibull, warning=FALSE, message=FALSE}
 # build dataset from only those non-censored data points
 uncensored_data <- cancer %>%
   filter(status == 2) %>%
@@ -267,7 +268,6 @@ whm <- rstan::stan_model(file = "../stan/weibull_hier.stan")
 # print out Stan code
 print(whm)
 # learn the model parameters
-weibull_hier <- rstan::sampling(whm, data = hier_data, iter = 25000)
+weibull_hier <- rstan::sampling(whm, data = hier_data, iter = 10000)
 ```
-
 

@@ -33,8 +33,15 @@ There is small number of divergent transitions, which is identified by divergent
 Also, chains have a treedepth__ of at most 10 and the default is 10. The maximum number is not exceeded,
 so the sampler does not hit its limit on the number of leapfrog steps, taken per iteration.
 ```{r}
+# pooled model
+wm_sampler_params = get_sampler_params(weibull_model, inc_warmup = TRUE)
+summary(do.call(rbind, wm_sampler_params), digits = 2)
+# censored model
 wmc_sampler_params = get_sampler_params(weibull_cens, inc_warmup = TRUE)
 summary(do.call(rbind, wmc_sampler_params), digits = 2)
+# hierarchical model
+hwm_sampler_params = get_sampler_params(weibull_hier, inc_warmup = TRUE)
+summary(do.call(rbind, hwm_sampler_params), digits = 2)
 ```
 
 ## Intervals for posterior data
@@ -52,7 +59,7 @@ regression_pars <- c(
   "beta[7]",
   "alpha"
 )
-weibull_posterior <- as.array(weibull_model)
+weibull_posterior <- as.data.frame(weibull_model)
 mcmc_areas(
   weibull_posterior,
   pars = regression_pars,
@@ -67,7 +74,7 @@ mcmc_areas(
 These posterior distributions of the $\beta$ parameters in this model are very clearly centered around the origin, and in some cases, may not be hugely informative to our variate. The $\alpha$ parameter seems to have well converged, and to a non-zero value which is a good sign. We move now to the pooled model considering censored data.
 
 ```{r}
-cens_weibull_posterior <- as.array(weibull_cens)
+cens_weibull_posterior <- as.data.frame(weibull_cens)
 mcmc_areas(
   cens_weibull_posterior,
   pars = regression_pars,
@@ -77,35 +84,21 @@ mcmc_areas(
 )
 ```
 
-Here we find more informative parameter estimates in terms of effect on the latent predictor than the uncensored data. Our hierarchical model, built in BRMS, does not log the regressor weights for the latent linear predictor, and instead operates in terms of correlations between variables given their group. Instead, we can visualise the population-level intercept of our model, `b_Intercept`, and the family `shape` parameter, seen below.
+Here we find more informative parameter estimates in terms of effect on the latent predictor than the uncensored data. Our hierarchical model, ...
 
 ```{r}
-hier_posterior <- as.array(weibull_hier)
+hier_posterior <- as.data.frame(weibull_hier)
 mcmc_areas(
   hier_posterior,
+  pars = colnames(hier_posterior)[
+    (colnames(hier_posterior) %like% "beta") 
+    | (colnames(hier_posterior) %like% "alpha")
+  ],
   prob = 0.8,
   prob_outer = 0.99,
   point_est = "mean"
   )
 ```
-
-We find that the intercept is significantly non-zero, which suggests that
-$$
-\boldsymbol X \beta \ne 0
-$$
-for our data and latent regressors. This BRMS model uses a log link function, shown in the code
-```
-for (n in 1:N) {
-  // apply the inverse link function
-  mu[n] = exp(mu[n]) / tgamma(1 + 1 / shape);
-}
-target += weibull_lpdf(Y | shape, mu);
-```
-so that
-$$
-\sigma = \exp(\boldsymbol X \beta).
-$$
-Equally, we find a shape parameter $\alpha$, also significantly non-zero, but existing just below the values of $2$.
 
 ## Posterior predictive checks
 
@@ -114,7 +107,14 @@ In original data the peak of the distribution is larger, also, it is a little bi
 ```{r}
 color_scheme_set("brightblue")
 yrep_cens=extract(weibull_cens)$ypred
-bayesplot::ppc_hist(yobs, yrep_cens[1:8, ])
+yrep_weib=extract(weibull_model)$ypred
+yrep_hier=extract(weibull_hier)$ypred
+bayesplot::bayesplot_grid(
+  bayesplot::ppc_hist(y, yrep_weib[1:8, ]),
+  bayesplot::ppc_hist(yobs, yrep_cens[1:8, ]),
+  bayesplot::ppc_hist(y, yrep_hier[1:8, ]),
+  titles = c("Pooled", "Censored", "Hierarchical")
+)
 ```
 
 ## Model comparison using leave-one-out cross-validation and WAIC
@@ -150,18 +150,14 @@ plot(hwm_loo, label_points = TRUE)
 ```
 
 ```{r}
-# comparison of uncensored models with loo
-loo_compare(x = list(wm_loo, hwm_loo))
-# output loos
+# compare loos
 wm_loo
 cwm_loo
 hwm_loo
 ```
 
 ```{r}
-# comparison of uncensored models with waic
-loo_compare(x = list(wm_waic, hwm_waic))
-# output waics
+# compare waics
 wm_waic
 cwm_waic
 hwm_waic
@@ -176,6 +172,6 @@ Elpd_loo is better than, for example, MSE for continuous variable prediction, as
 
 
 ## Prior sensitivity analysis
-The sensitivity of posterior inference about θ to the proposed prior distribution has been checked for models.
+The sensitivity of posterior inference about $\theta$ to the proposed prior distribution has been checked for models.
 The dataset in that work is not small and posterior inferences based on a large sample are not particularly sensitive to the prior distribution.
 

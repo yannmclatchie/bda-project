@@ -178,4 +178,6 @@ Elpd_loo is better than, for example, MSE for continuous variable prediction, as
 
 
 ## Prior sensitivity analysis
+The sensitivity of posterior inference about θ to the proposed prior distribution has been checked for models.
+The dataset in that work is not small and posterior inferences based on a large sample are not particularly sensitive to the prior distribution.
 

@@ -101,7 +101,8 @@ print(wm)
 weibull_model <- rstan::sampling(
   wm,
   iter = 10000,
-  data = weibull_data
+  data = weibull_data,
+  algorithm = "NUTS"
 )
 ```
 
@@ -261,3 +262,5 @@ weibull_hier <- brm(
   control = list(adapt_delta = 0.9) # combat divergent transitions
 )
 ```
+
+

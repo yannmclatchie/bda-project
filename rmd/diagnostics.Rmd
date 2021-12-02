@@ -2,6 +2,8 @@
 
 ## $\hat R$, effective sample size, and divergences
 
+We begin by plotting the rank-normalised $\hat R$ values for each of the three models in accordance with @rhat, which provides an improved comparison of the between-chain and within-chain estimates for each model parameter. If the chains have not mixed well, then we expect this value of $\hat R$ to be larger than $1$. Contrarily, if we find that the $\hat R$ for all model parameters are below $1.05$, then we will conclude that the chains have mixed well and agree on the parameter estimates.
+
 ```{r}
 rhat_wm <- mcmc_rhat(rhat = rhat(weibull_model))
 rhat_hwm <- mcmc_rhat(rhat = rhat(weibull_hier))
@@ -14,6 +16,8 @@ bayesplot_grid(
   )
 ```
 
+We find that all our models have converged, which is good news for our parameter estimates. We now look at the effective sample size of our MCMC draws for each our three models. The effective sample size, $n_{\text{eff}}$, is an estimate of the number of independent draws from the posterior distribution are statistically important towards estimating a given parameter. We will plot the ratio of $n_{\text{eff}}$ to $N$, the total number of samples, and hope to find this ratio to be as large as possible, since a larger $n_{\text{eff}}$ is indicative of stability across simulated sequence and that the simulations suffice for practical purposes as is argued in @bda3.
+
 ```{r}
 bayesplot_grid(
   mcmc_neff(neff_ratio(weibull_model)),
@@ -23,9 +27,82 @@ bayesplot_grid(
   )
 ```
 
+We find that both the pooled models (not considered censored, and considered censored data respectively) have very few parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data have many such parameters with $n_{\text{eff}}$ small, which leads us to be doubtful of the models future performance.
+
 ## Posterior predictive checks
 
+We will now plot the posterior distributions of the weights of our regressors in our GLMs and the shape parameter $\alpha$ for our three models, starting with our pooled GLM not considering censored data.
+
+```{r}
+regression_pars <- c(
+  "beta[1]",
+  "beta[2]",
+  "beta[3]",
+  "beta[4]",
+  "beta[5]",
+  "beta[6]",
+  "beta[7]",
+  "alpha"
+)
+weibull_posterior <- as.array(weibull_model)
+mcmc_areas(
+  weibull_posterior,
+  pars = regression_pars,
+  prob = 0.8,
+  # 80% intervals
+  prob_outer = 0.99,
+  # 99%
+  point_est = "mean"
+)
+```
+
+These posterior distributions of the $\beta$ parameters in this model are very clearly centered around the origin, and in some cases, may not be hugely informative to our variate. The $\alpha$ parameter seems to have well converged, and to a non-zero value which is a good sign. We move now to the pooled model considering censored data.
+
+```{r}
+cens_weibull_posterior <- as.array(weibull_cens)
+mcmc_areas(
+  cens_weibull_posterior,
+  pars = regression_pars,
+  prob = 0.8,
+  prob_outer = 0.99,
+  point_est = "mean"
+)
+```
+
+Here we find more informative parameter estimates in terms of effect on the latent predictor than the uncensored data. Our hierarchical model, built in BRMS, does not log the regressor weights for the latent linear predictor, and instead operates in terms of correlations between variables given their group. Instead, we can visualise the population-level intercept of our model, `b_Intercept`, and the family `shape` parameter, seen below.
+
+```{r}
+hier_posterior <- as.array(weibull_hier)
+mcmc_areas(
+  hier_posterior,
+  pars = c("b_Intercept", "shape"),
+  prob = 0.8,
+  prob_outer = 0.99,
+  point_est = "mean"
+  )
+```
+
+We find that the intercept is significantly non-zero, which suggests that
+$$
+\boldsymbol X \beta \ne 0
+$$
+for our data and latent regressors. This BRMS model uses a log link function, shown in the code
+```
+for (n in 1:N) {
+  // apply the inverse link function
+  mu[n] = exp(mu[n]) / tgamma(1 + 1 / shape);
+}
+target += weibull_lpdf(Y | shape, mu);
+```
+so that
+$$
+\sigma = \exp(\boldsymbol X \beta).
+$$
+Equally, we find a shape parameter $\alpha$, also significantly non-zero, but existing just below the values of $2$.
+
 ## Model comparison using leave-one-out cross-validation and WAIC
+
+Having briefly examined the posterior distributions of our models, we now investigate the PSIS-LOO and WAIC values for model comparison, in the aim of determining which of our models is "best" for our purposes.
 
 ```{r}
 # perform approximate loo and psis-loo

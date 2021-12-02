@@ -2,7 +2,7 @@
 
 In the following section, we will motivate and define mathematically four Generalised Linear Models (GLMs) implemented in Stan and using BRMS in two cases.
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 # install libraries
 library(survival)
 library(tidyverse)
@@ -12,29 +12,10 @@ library(bayesplot)
 library(loo)
 library(reshape2)
 library(ggplot2)
-library(splines2)
 # set number of cores
 options(mc.cores = parallel::detectCores())
-
 # read lung cancer data from `survival` library
 data("cancer", package = "survival")
-# build dataset from only those non-censored data points
-uncensored_data <- cancer %>%
-  filter(status == 2) %>%
-  drop_na()
-# identify covariate labels and build design matrix
-cov_labels <- uncensored_data %>%
-  dplyr::select(-status,-time,-inst) %>%
-  colnames()
-# build design matrix
-X <- as.matrix(uncensored_data[cov_labels])
-# print(dim(X))
-# [1] 120   7
-y <- uncensored_data$time
-# build data list for Stan model
-weibull_data = list(
-  y = y, X = X, N = length(y), M = ncol(X)
-)
 ```
 
 ## Weibull without censored data
@@ -93,6 +74,24 @@ The choice of a Half-Cauchy prior is motivated in @taumain, so that inferences a
 Below, we fit the model in Stan and output the Stan code for the reader.
 
 ```{r weibull, warning=FALSE, message=FALSE, comment=FALSE}
+# build dataset from only those non-censored data points
+uncensored_data <- cancer %>%
+  filter(status == 2) %>%
+  filter(inst %in% c(1, 12, 13, 3, 11, 22, 16)) %>%
+  drop_na()
+# identify covariate labels and build design matrix
+cov_labels <- uncensored_data %>%
+  dplyr::select(-status,-time,-inst) %>%
+  colnames()
+# build design matrix
+X <- as.matrix(uncensored_data[cov_labels])
+# print(dim(X))
+# [1] 120   7
+y <- uncensored_data$time
+# build data list for Stan model
+weibull_data = list(
+  y = y, X = X, N = length(y), M = ncol(X)
+)
 # compile and run seperate model
 wm <- rstan::stan_model(file = "../stan/weibull_survival.stan")
 # print out Stan code
@@ -100,7 +99,7 @@ print(wm)
 # learn the model parameters
 weibull_model <- rstan::sampling(
   wm,
-  iter = 10000,
+  iter = 25000,
   data = weibull_data,
   algorithm = "NUTS"
 )
@@ -170,7 +169,9 @@ Data preparation
 data("cancer", package = "survival")
 
 # omittimg NAs
-data = cancer %>% na.omit()
+data = cancer %>% 
+  filter(inst %in% c(1, 12, 13, 3, 11, 22, 16)) %>%
+  na.omit()
 
 # Censoring status is transformed to the column with 0-censored, 1-observed.
 # The continuous variables are centered.
@@ -206,13 +207,13 @@ data_model = list(
 ```
 
 Running model
-```{r, warning=FALSE, message=FALSE, comment=FALSE}
+```{r censored, warning=FALSE, message=FALSE, comment=FALSE}
 # compile and run censored model
 cwm = rstan::stan_model(file = "../stan/weibull_censored.stan")
 # print out Stan code
 print(cwm)
 # learn the model with parameters 4 chains, 5000 iterations for each, 2500 iterations for warm-up
-weibull_cens = rstan::sampling(cwm, data = data_model, iter = 5000)
+weibull_cens = rstan::sampling(cwm, data = data_model, iter = 25000)
 ```
 
 
@@ -233,34 +234,40 @@ This is seen visually below in Figure \ref{}.
 
 The same priors are used for the hierarchical model as the pooled model
 
-### Implemented in BRMS
+### Implemented in Stan
 
 ```{r hier_weibull, warning=FALSE, message=FALSE, comment=FALSE}
-# build model formula of the form
-hw_formula <- formula(paste("time ~ (",
-                            paste0(cov_labels, collapse = " + "),
-                            "| inst)"))
-hw_formula
-# define strong priors over regressors and shape
-hw_prior <- c(
-  set_prior("normal(0, 1)", class = "sd"),
-  set_prior("cauchy(0, 5)", class = "shape")
+# build dataset from only those non-censored data points
+uncensored_data <- cancer %>%
+  filter(status == 2) %>%
+  filter(inst %in% c(1, 12, 13, 3, 11, 22, 16)) %>%
+  drop_na()
+# identify covariate labels and build design matrix
+cov_labels <- uncensored_data %>%
+  dplyr::select(-status,-time,-inst) %>%
+  colnames()
+# build design matrix
+X <- as.matrix(uncensored_data[cov_labels])
+# print(dim(X))
+# [1] 120   7
+y <- uncensored_data$time
+# institution labels
+ll <- as.numeric(as.factor(uncensored_data$inst))
+# build some hierarchical data for Stan
+hier_data = list(
+  y = y,
+  X = X,
+  ll = ll,
+  N = length(y),
+  M = ncol(X),
+  J = length(unique(ll))
 )
-# generate model stan code
-make_stancode(hw_formula,
-              uncensored_data,
-              weibull(link = "log", link_shape = "log"),
-              hw_prior)
-# fit hierarchical GLM model with BRMS, expliciting the Weibull family
-weibull_hier <- brm(
-  formula = hw_formula,
-  data = uncensored_data,
-  prior = hw_prior,
-  family = weibull(link = "log", link_shape = "log"),
-  iter = 10000,
-  cores = parallel::detectCores(),
-  control = list(adapt_delta = 0.9) # combat divergent transitions
-)
+# compile and run seperate model
+whm <- rstan::stan_model(file = "../stan/weibull_hier.stan")
+# print out Stan code
+print(whm)
+# learn the model parameters
+weibull_hier <- rstan::sampling(whm, data = hier_data, iter = 25000)
 ```
 
 

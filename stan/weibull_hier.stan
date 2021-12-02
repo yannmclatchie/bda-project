@@ -61,13 +61,11 @@ generated quantities {
   real ypred[N];
   vector[N] log_lik;
   
-  // compute predictive distribution for survival time
+  // compute quantities
   for (n in 1:N) {
+    // predictive distribution for survival time
     ypred[n] = weibull_rng(alpha, sigma[n]);
-  }
-  
-  // log-likelihood
-  for (n in 1:N) {
+    // log-likelihood
     log_lik[n] = weibull_lpdf(y[n] | alpha, sigma[n]);
   }
 }

@@ -21,7 +21,7 @@ transformed parameters {
 model {
   // priors
   beta ~ normal(0, 10);
-  alpha ~ gamma(1,1);
+  alpha ~ cauchy(0, 5);
 
   // fitting model
   yobs ~ weibull(alpha, sigma);

@@ -151,7 +151,7 @@ where $F_{X}(x)$ is the cumulative distribution function.
 
 ### Priors
 
-Weakly-informative priors for parameters are used. There are 7 covariates in the model, for each regressor $\beta$ can take positive and negative values, however, these values are not likely to be very large. For them, normal distribution $N(0,10)$ can be used.  Also, the prior has to be made for the shape parameter, $Gamma(1,1)$ is a variant, as the majority of the variance is not too close to zero, it has rather long tail. 
+Weakly-informative priors for parameters are used. There are 7 covariates in the model, for each regressor $\beta$ can take positive and negative values, however, these values are not likely to be very large. For them, normal distribution $N(0,10)$ can be used.  Also, the prior has to be made for the shape parameter, $Gamma(1,1)$ is a variant, as the majority of the variance is not too close to zero, it has rather long tail, but which is not too heavy. Even we are not experts-oncologists, we know that typically person's with advanced lung cancer is a little bit lower than a year, some patients live even for three years. The chosen prior is suitable, as it allows to produce survival time values, which are not too strict and at the same time really unlike to be larger than 5 years, for example.
 
 $$
 \beta \sim N(0,10)

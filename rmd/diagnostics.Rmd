@@ -29,6 +29,17 @@ bayesplot_grid(
 
 We find that both the pooled models (not considered censored, and considered censored data respectively) have very few parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data have many such parameters with $n_{\text{eff}}$ small, which leads us to be doubtful of the models future performance.
 
+## Divergence parameters
+
+Censored model:
+There is small number of divergent transitions, which is identified by divergent__ being 1.
+Also, chains have a treedepth__ of at most 10 and the default is 10. The maximum number is not exceeded,
+so the sampler does not hit its limit on the number of leapfrog steps, taken per iteration.
+```{r}
+wmc_sampler_params = get_sampler_params(weibull_cens, inc_warmup = TRUE)
+summary(do.call(rbind, wmc_sampler_params), digits = 2)
+```
+
 ## Intervals for posterior data
 
 We will now plot the posterior distributions of the weights of our regressors in our GLMs and the shape parameter $\alpha$ for our three models, starting with our pooled GLM not considering censored data.

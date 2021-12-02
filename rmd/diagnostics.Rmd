@@ -123,7 +123,7 @@ bayesplot::ppc_hist(yobs, yrep_cens[1:8, ])
 
 ## Model comparison using leave-one-out cross-validation and WAIC
 
-Having briefly examined the posterior distributions of our models, we now investigate the PSIS-LOO and WAIC values for model comparison, in the aim of determining which of our models is "best" for our purposes.
+Having briefly examined the posterior distributions of our models, we now investigate the PSIS-LOO and WAIC values for model comparison, in the aim of determining which of our models is "best" for our purposes. Note, that PSIS-LOO is more accurate than WAIC criteria as it has better diagnostics.
 
 ```{r}
 # perform approximate loo and psis-loo
@@ -173,6 +173,8 @@ The best model is.....
 After her comes the....
 
 ## Predictive performance assessment
+
+Elpd_loo is better than, for example, MSE for continuous variable prediction, as it evaluates the whole predictive distribution and not just the mean. 
 
 
 ## Prior sensitivity analysis

@@ -10,6 +10,8 @@ exponentiated exponential (has properties, similar to Gamma distribution, but su
 Also, maybe it'd be worth to pay more attention to features and apply transformation or even extraction to them.
 Moreover, the priors can be tested even more accurately, variant like half-cauchy can be tried.
 
+## What was learned from the data analysis?
+
 ## Self-reflection and learnings
 
 The group learnt a lot about the applications of MCMC methods to Survival analysis.

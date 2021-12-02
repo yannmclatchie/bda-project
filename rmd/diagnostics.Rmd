@@ -5,15 +5,22 @@
 ```{r}
 rhat_wm <- mcmc_rhat(rhat = rhat(weibull_model))
 rhat_hwm <- mcmc_rhat(rhat = rhat(weibull_hier))
-bayesplot_grid(rhat_wm,
-               rhat_hwm,
-               titles = c("Pooled model", "Hierarchical model"))
+rhat_cwm <- mcmc_rhat(rhat = rhat(weibull_cens))
+bayesplot_grid(
+  rhat_wm,
+  rhat_hwm,
+  rhat_cwm,
+  titles = c("Pooled model", "Hierarchical model", "Censored model")
+  )
 ```
 
 ```{r}
-bayesplot_grid(mcmc_neff(neff_ratio(weibull_model)),
-               mcmc_neff(neff_ratio(weibull_hier)),
-               titles = c("Pooled model", "Hierarchical model"))
+bayesplot_grid(
+  mcmc_neff(neff_ratio(weibull_model)),
+  mcmc_neff(neff_ratio(weibull_hier)),
+  mcmc_neff(neff_ratio(weibull_cens)),
+  titles = c("Pooled model", "Hierarchical model", "Censored model")
+  )
 ```
 
 ## Posterior predictive checks
@@ -29,6 +36,11 @@ wm_r_eff <- relative_eff(exp(wm_log_lik), cores = parallel::detectCores())
 wm_loo <- loo(wm_log_lik, r_eff = wm_r_eff, cores = parallel::detectCores())
 # compute waic
 wm_waic <- waic(wm_log_lik, cores = parallel::detectCores())
+# repeat for censored data model
+cwm_log_lik <- extract_log_lik(weibull_cens, merge_chains = FALSE)
+cwm_r_eff <- relative_eff(exp(cwm_log_lik), cores = parallel::detectCores())
+cwm_loo <- loo(cwm_log_lik, r_eff = cwm_r_eff, cores = parallel::detectCores())
+cwm_waic <- waic(cwm_log_lik, cores = parallel::detectCores())
 # repeat for hierarchical Weibull
 hwm_loo <- loo(weibull_hier, cores = parallel::detectCores())
 hwm_waic <- waic(weibull_hier, cores = parallel::detectCores())
@@ -37,15 +49,24 @@ hwm_waic <- waic(weibull_hier, cores = parallel::detectCores())
 ```{r}
 # plot pareto k diagnostics for the models
 plot(wm_loo, label_points = TRUE)
+plot(cwm_loo, label_points = TRUE)
 plot(hwm_loo, label_points = TRUE)
 ```
 
 ```{r}
-# comparison of models with loo
+# comparison of uncensored models with loo
 loo_compare(x = list(wm_loo, hwm_loo))
+# output loos
+wm_loo
+cwm_loo
+hwm_loo
 ```
 
 ```{r}
-# comparison of models with waic
+# comparison of uncensored models with waic
 loo_compare(x = list(wm_waic, hwm_waic))
+# output waics
+wm_waic
+cwm_waic
+hwm_waic
 ```

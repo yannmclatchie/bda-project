@@ -22,8 +22,11 @@ Special attention has to be paid for "censoring status" feature. It indicates if
 
 There are three variables, needed to be explained:
 ph.ecog - ECOG performance score (0-4). 0-good condition, 4-the worst condition, much time in bad.
+
 ph.karno - Karnofsky performance score (bad=0-good=100). Provided by physician.
+
 pat.karno - Karnofsky performance score. Provided by patient.
+
 
 ### Exploratory data analysis
 
@@ -43,6 +46,8 @@ data = cancer %>% na.omit()
 ```
 
 Institutions are considered as variables, useful for hierarchical model.
+There are some institutional groups, where the number of patiens observed is rather small. They are excluded from dataset.
+
 ```{r}
 table(data$inst)
 ```

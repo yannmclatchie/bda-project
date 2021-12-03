@@ -24,14 +24,14 @@ bayesplot_grid(
   )
 ```
 
-We find that both the pooled models (not considered censored, and considered censored data respectively) have very few parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data have many such parameters with $n_{\text{eff}}$ small, which leads us to be doubtful of the models future performance.
+We find that both the pooled model, model with censored data have very few parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data have a little more such parameters with $n_{\text{eff}}$ small, which leads us to be doubtful of the models future performance.
 
 ## Divergence parameters
 
-Censored model:
 There is small number of divergent transitions, which is identified by divergent__ being 1.
 Also, chains have a treedepth__ of at most 10 and the default is 10. The maximum number is not exceeded,
 so the sampler does not hit its limit on the number of leapfrog steps, taken per iteration.
+
 ```{r}
 # pooled model
 wm_sampler_params = get_sampler_params(weibull_model, inc_warmup = TRUE)
@@ -71,7 +71,7 @@ mcmc_areas(
 )
 ```
 
-These posterior distributions of the $\beta$ parameters in this model are very clearly centered around the origin, and in some cases, may not be hugely informative to our variate. The $\alpha$ parameter seems to have well converged, and to a non-zero value which is a good sign. We move now to the pooled model considering censored data.
+These posterior distributions of the $\beta$ parameters in this model are very clearly centered around the origin, and in some cases, may not be hugely informative to our variate. The $\alpha$ parameter seems to have well converged, and to a non-zero value which is a good sign. We move now to the model considering censored data.
 
 ```{r}
 cens_weibull_posterior <- as.data.frame(weibull_cens)
@@ -84,7 +84,9 @@ mcmc_areas(
 )
 ```
 
-Here we find more informative parameter estimates in terms of effect on the latent predictor than the uncensored data. Our hierarchical model, ...
+Here we find more informative parameter estimates in terms of effect on the latent predictor than the uncensored data. 
+
+For hierarchical model the results are shown down below.
 
 ```{r}
 hier_posterior <- as.data.frame(weibull_hier)
@@ -102,8 +104,6 @@ mcmc_areas(
 
 ## Posterior predictive checks
 
-For censored model the posterior draws are similar to the original distribution, however, there are two main differences.
-In original data the peak of the distribution is larger, also, it is a little bit more narrow, for model draws sometimes wider distribution is received.
 ```{r}
 color_scheme_set("brightblue")
 yrep_cens=extract(weibull_cens)$ypred
@@ -116,6 +116,12 @@ bayesplot::bayesplot_grid(
   titles = c("Pooled", "Censored", "Hierarchical")
 )
 ```
+
+For pooled model the posterior results are similar to original survival survival distribution. Here, the censored data is not inclulded, so all the data is mainly concentrated near particular peak.
+
+For censored model the posterior draws are similar to the original distribution. However, for some replicates the peak of the distribution is a little bit lower than for original data.
+
+For hierarchical model there are more broaden results, as here different institutional groups are taken into consideration. The predictive values in most cases follow the same distribution with, of course, some noise. 
 
 ## Model comparison using leave-one-out cross-validation and WAIC
 
@@ -163,15 +169,22 @@ cwm_waic
 hwm_waic
 ```
 
-The best model is.....
-After her comes the....
+Considering the k-values, for pooled model there is one bad value (larger than 0.7), others are good. For censored model one value is larger than 1, others are correct. Hierarchical model shows better performance in that case, as for it all k-values are lower than 0.7.
+
+Comparing the elpd_loo, the best (largest) value is shown by hierarchical model, than comes the model with censored data, after that - simple pooled.
+
+Considering the p_loo values. For pooled the optimal number of parameters is ~5.5 (and, actually, there 7 in the model, the result is pretty close).
+For censored ~13 params are shown (there actually we have 15 parameters, agan the results are pretty close). For hierarchical model, the p_loo shows 6.6 parameters
 
 ## Predictive performance assessment
 
-Elpd_loo is better than, for example, MSE for continuous variable prediction, as it evaluates the whole predictive distribution and not just the mean. 
-
+Elpd_loo is better than, for example, MSE for continuous variable prediction, as it evaluates the whole predictive distribution and not just the mean.
+For pooled elpd_loo = -632, for censored= - 527, for hierarchical = -486.
 
 ## Prior sensitivity analysis
 The sensitivity of posterior inference about $\theta$ to the proposed prior distribution has been checked for models.
-The dataset in that work is not small and posterior inferences based on a large sample are not particularly sensitive to the prior distribution.
+The dataset in that work is not really small and posterior inferences based on a large sample are not particularly sensitive to the 
+prior distribution. The parameters of half-cauchy were changed a bit, as well as the Normal distribution for betas.
+The combinations tested were: cauchy(0,8) and Normal(0,10), cauchy(0,2) and Normal(0,10), cauchy(0,5) and Normal(0,20), cauchy(0,8) and Normal(0,20).
+The results in most cases remained the same.
 

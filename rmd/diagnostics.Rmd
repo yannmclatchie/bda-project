@@ -184,5 +184,7 @@ For pooled elpd_loo = -632, for censored= - 527, for hierarchical = -486.
 ## Prior sensitivity analysis
 The sensitivity of posterior inference about $\theta$ to the proposed prior distribution has been checked for models.
 The dataset in that work is not really small and posterior inferences based on a large sample are not particularly sensitive to the 
-prior distribution. The parameters of half-cauchy were changed a bit, as wel as the Normal distribution for betas. The results in most cases remained the same.
+prior distribution. The parameters of half-cauchy were changed a bit, as well as the Normal distribution for betas.
+The combinations tested were: cauchy(0,8) and Normal(0,10), cauchy(0,2) and Normal(0,10), cauchy(0,5) and Normal(0,20), cauchy(0,8) and Normal(0,20).
+The results in most cases remained the same.
 

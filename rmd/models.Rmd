@@ -17,6 +17,8 @@ library(data.table)
 options(mc.cores = parallel::detectCores())
 # read lung cancer data from `survival` library
 data("cancer", package = "survival")
+# set random seed for reproducibility
+set.seed(300614)
 ```
 
 ## Weibull without censored data
@@ -213,7 +215,7 @@ Running model
 cwm = rstan::stan_model(file = "../stan/weibull_censored.stan")
 # print out Stan code
 print(cwm)
-# learn the model with parameters 4 chains, 5000 iterations for each, 2500 iterations for warm-up
+# learn the model with parameters 4 chains, 10000 iterations for each, 5000 iterations for warm-up
 weibull_cens = rstan::sampling(cwm, data = data_model, iter = 10000)
 ```
 
@@ -249,8 +251,7 @@ cov_labels <- uncensored_data %>%
   colnames()
 # build design matrix
 X <- as.matrix(uncensored_data[cov_labels])
-# print(dim(X))
-# [1] 120   7
+# observed survival times
 y <- uncensored_data$time
 # institution labels
 ll <- as.numeric(as.factor(uncensored_data$inst))
@@ -268,6 +269,67 @@ whm <- rstan::stan_model(file = "../stan/weibull_hier.stan")
 # print out Stan code
 print(whm)
 # learn the model parameters
-weibull_hier <- rstan::sampling(whm, data = hier_data, iter = 10000)
+weibull_hier <- rstan::sampling(whm, data = hier_data, iter = 7000)
+```
+
+In certain situations, the group-level parameters do not constrain the hierarchical distribution closely enough. This can occur when we either have many groups or high variance between the groups. In order to make hierarchical model sampling more efficient and to improve effective sample size metrics, we can employ a so-called _non-centered parameterisation_, where we replace the parameterisation of 
+```
+parameters {
+  // GLM parameters
+  matrix[M, J] beta;            // regressors weights for different institutions
+  real<lower=0> alpha;          // shape parameter
+  ...
+}
+model {
+  // hyperpriors
+  mu_beta ~ std_normal();
+  sigma_beta ~ gamma(1, 1);
+  // prior over regressor and shape parameters
+  for (j in 1:J) {
+    beta[, j] ~ normal(mu_beta, sigma_beta);
+  }
+  ...
+```
+to
+```
+parameters {
+  // GLM parameters
+  matrix[M, J] beta_unif;       // non-centered parameterisation regressors
+  real<lower=0> alpha;          // shape parameter
+  ...
+}
+transformed parameters {
+  matrix[M, J] beta;            // regressors weights for different institutions
+  // implies: beta ~ normal(mu_beta, sigma_beta)
+  for (j in 1:J) {
+    beta[, j] = mu_beta + sigma_beta * beta_unif[, j];
+  }
+  ...
+}
+model {
+  // hyperpriors
+  mu_beta ~ std_normal();
+  sigma_beta ~ gamma(1, 1);
+  // prior over regressor and shape parameters (non-centered parameterisation)
+  for (j in 1:J) {
+    beta_unif[, j] ~ std_normal();
+  }
+  ...
+```
+so that our `beta`, `mu_beta` and `sigma_beta` are less correlated with our posterior, and thus increasing the effective sample size, as is shown in @betancourt2013hamiltonian. Below, we fit such a non-centered parameterised model and compare the effective sample sizes of the two parameterisations to shown this to be the case.
+
+```{r noncentered, warning=FALSE, message=FALSE}
+# build non-centered parameterisation model
+whmnc <- rstan::stan_model(file = "../stan/weibull_hier_noncentered.stan")
+weibull_hier_nc <- rstan::sampling(whmnc, data = hier_data, iter = 7000)
+
+neff_cp <- neff_ratio(weibull_hier)
+neff_ncp <- neff_ratio(weibull_hier_nc)
+bayesplot::bayesplot_grid(
+  bayesplot::mcmc_neff(neff_cp), bayesplot::mcmc_neff(neff_ncp)
+)
+
+bayesplot::bayesplot_grid(bayesplot::mcmc_rhat(rhat = rhat(weibull_hier)),
+                          bayesplot::mcmc_rhat(rhat = rhat(weibull_hier_nc)))
 ```
 

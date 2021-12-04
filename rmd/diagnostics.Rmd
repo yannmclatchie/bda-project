@@ -55,7 +55,7 @@ weibull_posterior <- as.data.frame(weibull_model)
 mcmc_areas(
   weibull_posterior,
   pars = colnames(weibull_posterior)[
-    (colnames(weibull_posterior) %like% "beta") 
+    (colnames(weibull_posterior) %like% "beta")
     | (colnames(weibull_posterior) %like% "alpha")
   ],
   prob = 0.8,
@@ -73,7 +73,7 @@ cens_weibull_posterior <- as.data.frame(weibull_cens)
 mcmc_areas(
   cens_weibull_posterior,
   pars = colnames(cens_weibull_posterior)[
-    (colnames(cens_weibull_posterior) %like% "beta") 
+    (colnames(cens_weibull_posterior) %like% "beta")
     | (colnames(cens_weibull_posterior) %like% "alpha")
   ],
   prob = 0.8,
@@ -82,7 +82,7 @@ mcmc_areas(
 )
 ```
 
-Here we find more informative parameter estimates in terms of effect on the latent predictor than the uncensored data. 
+Here we find more informative parameter estimates in terms of effect on the latent predictor than the uncensored data.
 
 For hierarchical model the results are shown down below.
 
@@ -91,7 +91,7 @@ hier_posterior <- as.data.frame(weibull_hier)
 mcmc_areas(
   hier_posterior,
   pars = colnames(hier_posterior)[
-    (colnames(hier_posterior) %like% "beta") 
+    (colnames(hier_posterior) %like% "beta")
     | (colnames(hier_posterior) %like% "alpha")
   ],
   prob = 0.8,
@@ -119,7 +119,7 @@ For pooled model the posterior results are similar to original survival survival
 
 For censored model the posterior draws are similar to the original distribution. However, for some replicates the peak of the distribution is a little bit lower than for original data.
 
-For hierarchical model there are more broaden results, as here different institutional groups are taken into consideration. The predictive values in most cases follow the same distribution with, of course, some noise. 
+For hierarchical model there are more broaden results, as here different institutional groups are taken into consideration. The predictive values in most cases follow the same distribution with, of course, some noise.
 
 ## Model comparison using leave-one-out cross-validation and WAIC
 
@@ -186,5 +186,3 @@ The sensitivity of the posterior distribution of our sampled parameters to the p
 The dataset is not very small and posterior inferences based on large numbers of MCMC iterations tend to be not particularly sensitive to the prior distribution. The parameters of half-Cauchy were changed a bit, as well as the Normal distribution for betas. The combinations tested were: $\text{Cauchy}(0,8)$ and $\text{Normal}(0,10)$, $\text{Cauchy}(0,2)$ and $\text{Normal}(0,10)$, $\text{Cauchy}(0,5)$ and $\text{Normal}(0,20)$, $\text{Cauchy}(0,8)$ and $\text{Normal}(0,20)$. The results in most cases remained the same.
 
 In order to test the motivation set out in previous sections and in @taumain, the variance hyperparameter for the hierarchical model was changed to a Half-Cauchy (the suggested priors for fewer hierarchical groups), and in this case convergence was more difficult. As such, the rigidity and relative strength of the $\text{Gamma}(1, 1)$ helps convergence in this case with more groups. It is also worth noting, however, that changing the prior over the global $\alpha$ parameter from Half-Cauchy to Gamma has a large impact on the final result. We can draw from this information that the relative flexibility afforded by the weakly-informative Half-Cauchy prior allows the data to express itself more compared to the stronger and less flexible Gamma prior.
-
-

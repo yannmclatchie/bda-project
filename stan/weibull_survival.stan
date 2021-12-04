@@ -18,8 +18,8 @@ transformed data {
 
 parameters {
   // GLM parameters
-  vector[M] beta; // regressors
-  real<lower=0> alpha;  // shape parameter
+  vector[M] beta;      // regressors
+  real<lower=0> alpha; // shape parameter
 }
 
 transformed parameters {

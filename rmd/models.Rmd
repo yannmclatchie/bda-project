@@ -7,10 +7,8 @@ In the following section, we will motivate and define mathematically four Genera
 library(survival)
 library(tidyverse)
 library(rstan)
-library(brms)
 library(bayesplot)
 library(loo)
-library(reshape2)
 library(ggplot2)
 library(data.table)
 # set number of cores
@@ -18,7 +16,7 @@ options(mc.cores = parallel::detectCores())
 # read lung cancer data from `survival` library
 data("cancer", package = "survival")
 # set random seed for reproducibility
-set.seed(300614)
+set.seed(2021)
 ```
 
 ## Weibull without censored data
@@ -100,12 +98,8 @@ wm <- rstan::stan_model(file = "../stan/weibull_survival.stan")
 # print out Stan code
 print(wm)
 # learn the model parameters
-weibull_model <- rstan::sampling(
-  wm,
-  iter = 10000,
-  data = weibull_data,
-  algorithm = "NUTS"
-)
+weibull_model <- rstan::sampling(wm, iter = 10000, data = weibull_data)
+mcmc_rhat(rhat = rhat(weibull_model))
 ```
 
 ## Weibull with censored data
@@ -209,6 +203,7 @@ cwm = rstan::stan_model(file = "../stan/weibull_censored.stan")
 print(cwm)
 # learn the model with parameters 4 chains, 10000 iterations for each, 5000 iterations for warm-up
 weibull_cens = rstan::sampling(cwm, data = data_model, iter = 10000)
+mcmc_rhat(rhat = rhat(weibull_cens))
 ```
 
 
@@ -239,7 +234,7 @@ uncensored_data <- cancer %>%
   drop_na()
 # identify covariate labels and build design matrix
 cov_labels <- uncensored_data %>%
-  dplyr::select(-status,-time,-inst) %>%
+  dplyr::select(-status, -time, -inst) %>%
   colnames()
 # build design matrix
 X <- as.matrix(uncensored_data[cov_labels])
@@ -261,67 +256,21 @@ whm <- rstan::stan_model(file = "../stan/weibull_hier.stan")
 # print out Stan code
 print(whm)
 # learn the model parameters
-weibull_hier <- rstan::sampling(whm, data = hier_data, iter = 7000)
+weibull_hier <- rstan::sampling(whm, data = hier_data, iter = 10000)
+mcmc_rhat(rhat = rhat(weibull_hier))
 ```
 
-In certain situations, the group-level parameters do not constrain the hierarchical distribution closely enough. This can occur when we either have many groups or high variance between the groups. In order to make hierarchical model sampling more efficient and to improve effective sample size metrics, we can employ a so-called _non-centered parameterisation_, where we replace the parameterisation of 
-```
-parameters {
-  // GLM parameters
-  matrix[M, J] beta;            // regressors weights for different institutions
-  real<lower=0> alpha;          // shape parameter
-  ...
-}
-model {
-  // hyperpriors
-  mu_beta ~ std_normal();
-  sigma_beta ~ gamma(1, 1);
-  // prior over regressor and shape parameters
-  for (j in 1:J) {
-    beta[, j] ~ normal(mu_beta, sigma_beta);
-  }
-  ...
-```
-to
-```
-parameters {
-  // GLM parameters
-  matrix[M, J] beta_unif;       // non-centered parameterisation regressors
-  real<lower=0> alpha;          // shape parameter
-  ...
-}
-transformed parameters {
-  matrix[M, J] beta;            // regressors weights for different institutions
-  // implies: beta ~ normal(mu_beta, sigma_beta)
-  for (j in 1:J) {
-    beta[, j] = mu_beta + sigma_beta * beta_unif[, j];
-  }
-  ...
-}
-model {
-  // hyperpriors
-  mu_beta ~ std_normal();
-  sigma_beta ~ gamma(1, 1);
-  // prior over regressor and shape parameters (non-centered parameterisation)
-  for (j in 1:J) {
-    beta_unif[, j] ~ std_normal();
-  }
-  ...
-```
-so that our `beta`, `mu_beta` and `sigma_beta` are less correlated with our posterior, and thus increasing the effective sample size, as is shown in @betancourt2013hamiltonian. Below, we fit such a non-centered parameterised model and compare the effective sample sizes of the two parameterisations to shown this to be the case.
 
-```{r noncentered, warning=FALSE, message=FALSE}
-# build non-centered parameterisation model
-whmnc <- rstan::stan_model(file = "../stan/weibull_hier_noncentered.stan")
-weibull_hier_nc <- rstan::sampling(whmnc, data = hier_data, iter = 7000)
-
-neff_cp <- neff_ratio(weibull_hier)
-neff_ncp <- neff_ratio(weibull_hier_nc)
-bayesplot::bayesplot_grid(
-  bayesplot::mcmc_neff(neff_cp), bayesplot::mcmc_neff(neff_ncp)
+```{r}
+bayesplot_grid(
+  mcmc_rhat(rhat = rhat(weibull_model)),
+  mcmc_rhat(rhat = rhat(weibull_cens)),
+  mcmc_rhat(rhat = rhat(weibull_hier)),
+  titles = c(
+    "Pooled model",
+    "Censored model",
+    "Hierarchical model"
+  )
 )
-
-bayesplot::bayesplot_grid(bayesplot::mcmc_rhat(rhat = rhat(weibull_hier)),
-                          bayesplot::mcmc_rhat(rhat = rhat(weibull_hier_nc)))
 ```
 

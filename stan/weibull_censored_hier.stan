@@ -1,34 +1,31 @@
 data {
   int<lower=0> N;    // number of object
   int<lower=0> M;    // number of features
-  int<lower=0> Ncen;    // number of object
-  vector<lower=0>[N] yobs; // target-survival time
-  matrix[N, M] Xobs;    // covariates
-  vector<lower=0>[Ncen] ycen; // target-survival time
-  matrix[Ncen, M] Xcen;    // covariates
+  vector<lower=0>[N] y; // target-survival time
+  matrix[N, M] X;    // covariates
   int <lower =0> J; // number of institutions
-  int<lower=1,upper=J> inst_cens[Ncen]; // inst labels for censored
-  int<lower=1,upper=J> inst_obs[N]; // inst labels for observed
+  int<lower=1,upper=J> inst[N]; // inst labels
 }
 
 parameters {
-  vector[M] mu0;
-  vector<lower=0>[M] sigma0;
+  vector[M] mu; // mean hyperior over regressors
+  vector<lower=0>[M] sigma; // variance hyperior over regressors
   matrix[M,J] beta;       // regressors weights for different institutions
   real<lower=0> alpha;  // shape parameter
+}
+
+transformed parameters {
+  // compute latent predictor term
+  vector[N] eta = Xc * beta;
+  // apply the log inverse link function
+  vector<lower=0>[N] sigma = exp(-eta / alpha);
 }
 
 transformed parameters {
   // Log inverse link function
   vector<lower=0>[N] sigma;
   for (i in 1:N){
-    //print("*****");
-    //print(Xobs[i,]);
-    //print(beta[,inst_obs[i]]);
-    //print(-Xobs[i,]*beta[,inst_obs[i]]);
-    //print(alpha);
     sigma[i] = exp(dot_product(-Xobs[i,], beta[,inst_obs[i]]) / alpha);
-    //print(sigma[i]);
   }
 
 }

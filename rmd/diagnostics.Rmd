@@ -1,6 +1,6 @@
 # Diagnostics and performance
 
-## $\hat R$, effective sample size, and divergences
+## $\hat R$ and effective sample size
 
 We begin by plotting the rank-normalised $\hat R$ values for each of the three models in accordance with @rhat, which provides an improved comparison of the between-chain and within-chain estimates for each model parameter. If the chains have not mixed well, then we expect this value of $\hat R$ to be larger than $1$. Contrarily, if we find that the $\hat R$ for all model parameters are below $1.05$, then we will conclude that the chains have mixed well and agree on the parameter estimates.
 

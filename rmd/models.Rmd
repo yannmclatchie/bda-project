@@ -74,8 +74,8 @@ y_i &\sim \text{Weibull}(\sigma, \alpha)\,,\quad i = 1,\dots,N,\\
 \end{align*}
 The choice of a Half-Cauchy prior is motivated in @taumain, so that inferences are sensitive to the choice of weakly-informative priors. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In this pooled model, we model these parameters the same across all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in. This is seen visually below in the directed acyclic graph below.
 
-```{r, echo=FALSE, out.width="50%"}
-knitr::include_graphics("./pooled.pdf")
+```{r, echo=FALSE, out.width="50%", fig.align="center"}
+knitr::include_graphics("./rmd/pooled.pdf")
 ```
 
 ### Implemented in Stan
@@ -107,7 +107,6 @@ wm <- rstan::stan_model(file = "../stan/weibull_survival.stan")
 print(wm)
 # learn the model parameters
 weibull_model <- rstan::sampling(wm, iter = 10000, data = weibull_data)
-mcmc_rhat(rhat = rhat(weibull_model))
 ```
 
 ## Weibull with censored data
@@ -211,7 +210,6 @@ cwm = rstan::stan_model(file = "../stan/weibull_censored.stan")
 print(cwm)
 # learn the model with parameters 4 chains, 10000 iterations for each, 5000 iterations for warm-up
 weibull_cens = rstan::sampling(cwm, data = data_model, iter = 10000)
-mcmc_rhat(rhat = rhat(weibull_cens))
 ```
 
 
@@ -228,8 +226,8 @@ y_{ij} &\sim \text{Weibull}(\sigma_j, \alpha)\,,\quad i = 1,\dots,N,\,j= 1,\dots
 \end{align*}
 This is seen visually below in the directed acyclic graph below.
 
-```{r, echo=FALSE, out.width="50%"}
-knitr::include_graphics("./hier.pdf")
+```{r, echo=FALSE, out.width="50%", fig.align="center"}
+knitr::include_graphics("./rmd/hier.pdf")
 ```
 
 ### Defining the link function
@@ -271,20 +269,17 @@ whm <- rstan::stan_model(file = "../stan/weibull_hier.stan")
 print(whm)
 # learn the model parameters
 weibull_hier <- rstan::sampling(whm, data = hier_data, iter = 10000)
-mcmc_rhat(rhat = rhat(weibull_hier))
 ```
 
 
 ```{r}
-bayesplot_grid(
-  mcmc_rhat(rhat = rhat(weibull_model)),
-  mcmc_rhat(rhat = rhat(weibull_cens)),
-  mcmc_rhat(rhat = rhat(weibull_hier)),
-  titles = c(
-    "Pooled model",
-    "Censored model",
-    "Hierarchical model"
-  )
-)
+# extract the log-posterior and NUTS parameters for the pooled model
+lp_wm <- log_posterior(weibull_model)
+np_wm <- nuts_params(weibull_model)
+# and for the censored and hierarchical models
+lp_cwm <- log_posterior(weibull_cens)
+np_cwm <- nuts_params(weibull_cens)
+lp_whm <- log_posterior(weibull_hier)
+np_whm <- nuts_params(weibull_hier)
 ```
 

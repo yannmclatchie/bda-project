@@ -171,9 +171,6 @@ Considering the k-values, for pooled model there is one bad value (larger than 0
 
 Comparing the elpd_loo, the best (largest) value is shown by hierarchical model, than comes the model with censored data, after that - simple pooled.
 
-Considering the p_loo values. For pooled the optimal number of parameters is ~5.5 (and, actually, there 7 in the model, the result is pretty close).
-For censored ~13 params are shown (there actually we have 15 parameters, agan the results are pretty close). For hierarchical model, the p_loo shows 6.6 parameters
-
 ## Predictive performance assessment
 
 Elpd_loo is better than, for example, MSE for continuous variable prediction, as it evaluates the whole predictive distribution and not just the mean.

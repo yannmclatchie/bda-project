@@ -55,19 +55,15 @@ model {
 ```
 so that our `beta`, `mu_beta` and `sigma_beta` are less correlated with our posterior, and thus increasing the effective sample size, as is shown in @betancourt2013hamiltonian. This reparameterisation, however, will likely not significantly improve $n_\text{eff}$ of the hierarchical model, as we have neither too many groups nor too many data. A Stan implementation is available at @git for further interest.
 
-Also, maybe it'd be worth to pay more attention to features and apply extra transformation (except mean-centering) or even extraction to them.
-Moreover, the priors can be tested even more accurately, variants like gamma can be tried.
+Also, maybe it'd be worth to pay more attention to features and apply extra transformation (except mean-centering) or even extraction to them. Moreover, the priors can be tested even more accurately, variants like gamma can be tried.
 
 The sampling algorithms needs rather large number of iteration to converge, some reparametrization can be made to decrease that number.
 
-## Things, learnt from the data analysis
+## Things learnt from the data analysis
 
-First of all, it has to be said that the dataset is rather complex and data analysis process only confirms it.
-It was understood that the survival time of patients with advanced lung cancer can be approximated by Weibull distribution. And the thoughts that the data belonging to various institutions may have different shape and scale parameters have been confirmed. That is why, the model with hierarchical structure, which provides a little different distributions for each institute parameters is better, it was confirmed by elpd_loo, waic parameters and PSIS diagnostic plot. 
-
+First of all, it has to be said that the dataset is rather complex and data analysis process only confirms it. It was understood that the survival time of patients with advanced lung cancer can be approximated by Weibull distribution. And the thoughts that the data belonging to various institutions may have different shape and scale parameters have been confirmed. That is why, the model with hierarchical structure, which provides a little different distributions for each institute parameters is better, it was confirmed by ELPD, WAIC parameters and PSIS diagnostic plot. 
 
 ## Self-reflection and learnings
 
 The group learnt a lot about the applications of MCMC methods to Survival analysis.
-Previously, some of us did not even know about the concept of Survival analysis, about such terms, like
-survival, hazard function, or with what distributions survival time can be simulated. Also, previously, there wasn't chance to dive deep into the  Weibull regression models, now degree of understanding of this model increased. Last but not least, some functions in R were discovered (connected with bayesian statistics), about which have never heard before.
+Previously, some of us did not even know about the concept of Survival analysis, about such terms, like survival, hazard function, or with what distributions survival time can be simulated. Also, previously, there wasn't chance to dive deep into the  Weibull regression models, now degree of understanding of this model increased. The process of prior ellicitation and model building, including motivating a link function in a non-standard GLM, was very informative.  Last but not least, some functions and packages in `R` were discovered (connected with bayesian statistics), about which have never heard before.

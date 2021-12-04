@@ -17,7 +17,7 @@ bayesplot_grid(
 )
 ```
 
-We find that all our models have converged, which is good news for our parameter estimates. We now look at the effective sample size of our MCMC draws for each our three models. The effective sample size, $n_{\text{eff}}$, is an estimate of the number of independent draws from the posterior distribution are statistically important towards estimating a given parameter. We will plot the ratio of $n_{\text{eff}}$ to $N$, the total number of samples, and hope to find this ratio to be as large as possible, since a larger $n_{\text{eff}}$ is indicative of stability across simulated sequence and that the simulations suffice for practical purposes as is argued in @bda3.
+We find that all our models have converged and that the chains agree on the estimates, which is good news for our parameter estimates. We now look at the effective sample size of our MCMC draws for each our three models. The effective sample size, $n_{\text{eff}}$, is an estimate of the number of independent draws from the posterior distribution are statistically important towards estimating a given parameter. We will plot the ratio of $n_{\text{eff}}$ to $N$, the total number of samples, and hope to find this ratio to be as large as possible, since a larger $n_{\text{eff}}$ is indicative of stability across simulated sequence and that the simulations suffice for practical purposes as is argued in @bda3.
 
 ```{r}
 bayesplot_grid(
@@ -28,7 +28,7 @@ bayesplot_grid(
   )
 ```
 
-We find that both the pooled model, model with censored data have very few parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data has some parameters with $n_{\text{eff}} \leq 0.1$, which is slightly concerning regarding the model's future performance.
+We find that both the pooled models have no parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data has some parameters with $n_{\text{eff}} \leq 0.1$, which is slightly concerning regarding the model's future performance.
 
 ## Divergence parameters
 
@@ -45,6 +45,24 @@ summary(do.call(rbind, wmc_sampler_params), digits = 2)
 hwm_sampler_params = get_sampler_params(weibull_hier, inc_warmup = TRUE)
 summary(do.call(rbind, hwm_sampler_params), digits = 2)
 ```
+
+We can plot the log-posterior and acceptance NUTS acceptance statistics given divergent samples as follows. We first start with the pooled model and the censored model below.
+
+```{r}
+# plot divergence statistics for the pooled model
+bayesplot::mcmc_nuts_divergence(nuts_params(weibull_model), log_posterior(weibull_model))
+# plot divergence statistics for the censored model
+bayesplot::mcmc_nuts_divergence(nuts_params(weibull_cens), log_posterior(weibull_cens))
+```
+
+We find that there are no divergences following the warmup, which is great! Now moving on the hierarchical model, we find that there were some divergences.
+
+```{r}
+# plot divergence statistics for the hierarhical model
+bayesplot::mcmc_nuts_divergence(nuts_params(weibull_hier), log_posterior(weibull_hier))
+```
+
+We find that divergent steps have a lower than average acceptance statistic to non-divergent steps, and also a lower log-posterior statistic. This means that even when we have a divergent step, it is not greatly affecting the posterior distribution, which is good!
 
 ## Intervals for posterior data
 

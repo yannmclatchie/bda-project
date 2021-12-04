@@ -72,7 +72,9 @@ y_i &\sim \text{Weibull}(\sigma, \alpha)\,,\quad i = 1,\dots,N,\\
 \sigma &= \exp\left ( -\frac{\boldsymbol X \beta}{\alpha}\right ),\\
 \beta_j \sim& N(0, 1)\,,\quad j=1,\dots,M.\\
 \end{align*}
-The choice of a Half-Cauchy prior is motivated in @taumain, so that inferences are sensitive to the choice of weakly-informative priors. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In this pooled model, we model these parameters the same across all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in. This is seen visually below in the directed acyclic graph below.
+The choice of a Half-Cauchy prior is motivated by @taumain, so that inferences are sensitive to the choice of weakly-informative priors. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In short, it acts as an appropriate weakly-informative prior satisfying the positive constraint, and given that we expect the value of $\alpha$ to be below 10. Our Gaussian prior over the regressors is easily motivated by the parameterisation of the data. We will mean-center the design matrix before performing our regression in a `transformed data` block. This standardisation will hopefully reduce variance in our regressors and make learning their weights easier. We expect the weights of the regressors to be close to zero, and can be negative, making this an appropriate weakly-informative prior.
+
+In this pooled model, we model these parameters the same across all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in. This is seen visually below in the directed acyclic graph below.
 
 ```{r, echo=FALSE, out.width="50%", fig.align="center"}
 knitr::include_graphics("./rmd/pooled.pdf")
@@ -244,7 +246,7 @@ knitr::include_graphics("./rmd/hier.pdf")
 
 ### Priors
 
-The same priors are used for the hierarchical model as the pooled model
+The same global priors are used for the hierarchical model as the pooled model. We motivate the Gamma hyperprior over the variance of $\beta$ with @taumain, since we have 7 groups a Half-Cauchy will be too flexible to different group whereas a Gamma will be more stable for more groups. We have a standard Gaussian hyperprior over the the mean of $\beta$, which we can motivate since the value of $\beta$ can be either positive or negative so this allows the groups to express themselves either way.
 
 ### Implemented in Stan
 
@@ -279,17 +281,5 @@ whm <- rstan::stan_model(file = "../stan/weibull_hier.stan")
 print(whm)
 # learn the model parameters
 weibull_hier <- rstan::sampling(whm, data = hier_data, iter = 10000)
-```
-
-
-```{r}
-# extract the log-posterior and NUTS parameters for the pooled model
-lp_wm <- log_posterior(weibull_model)
-np_wm <- nuts_params(weibull_model)
-# and for the censored and hierarchical models
-lp_cwm <- log_posterior(weibull_cens)
-np_cwm <- nuts_params(weibull_cens)
-lp_whm <- log_posterior(weibull_hier)
-np_whm <- nuts_params(weibull_hier)
 ```
 

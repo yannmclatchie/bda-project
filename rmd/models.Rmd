@@ -155,7 +155,17 @@ where $F_{X}(x)$ is the cumulative distribution function.
 ### Priors
 
 The same priors are used for the censored model as for the pooled model. Even we are not experts-oncologists, we know that typically person's life with advanced lung cancer is a little bit lower than a year, some patients live even for three years. The chosen prior is suitable, as it allows to produce survival time values, which are not too strict and at the same time really unlike to be larger than 5 years, for example.
-Chosen priors do not contribute strongly to the posterior, so the data can "speak for itself".
+
+Chosen priors do not contribute strongly to the posterior, so the data can "speak for itself". Algebraically then, the model is given as
+\begin{align*}
+y_i &\sim \begin{cases}\text{Weibull}(\sigma, \alpha)\,,\quad \text{if }y_i\text{ is observed},\\
+\text{log-likelihood Weibull}(\sigma, \alpha)\,,\quad \text{if }y_i\text{ is censored},
+\end{cases}\\
+\alpha &\sim \text{Half-Cauchy}(5),\\
+\sigma &= \exp\left ( -\frac{\boldsymbol X \beta}{\alpha}\right ),\\
+\beta_j \sim& N(0, 1)\,.\\
+\end{align*}
+Note that this is graphically equivalent to the pooled model.
 
 ### Implemented in Stan
 

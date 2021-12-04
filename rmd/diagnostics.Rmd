@@ -123,7 +123,7 @@ For hierarchical model there are more broaden results, as here different institu
 
 ## Model comparison using leave-one-out cross-validation and WAIC
 
-Having briefly examined the posterior distributions of our models, we now investigate the PSIS-LOO and WAIC values for model comparison, in the aim of determining which of our models is "best" for our purposes. Note, that PSIS-LOO is more accurate than WAIC criteria as it has better diagnostics.
+Having briefly examined the posterior distributions of our models, we now investigate the PSIS-LOO and WAIC values for model comparison, in the aim of determining which of our models is "best" for our purposes. Note, that PSIS-LOO is more accurate than WAIC criteria in our case since PSIS provides useful diagnostics as well as effective sample size and Monte Carlo estimates, as is mentioned in @loo.
 
 ```{r}
 # perform approximate loo and psis-loo
@@ -167,23 +167,24 @@ cwm_waic
 hwm_waic
 ```
 
-Considering the k-values, for pooled model there is one bad value (larger than 0.7), others are good. For censored model one value is larger than 1, others are correct. Hierarchical model shows better performance in that case, as for it all k-values are lower than 0.7.
+Considering the Pareto $k$-values, for pooled model all values are good. For the censored model one value is larger than 1, all others are good Hierarchical model shows better performance in that case, as for it all $k$-values are lower than $0.7$ like the pooled model.
 
-Comparing the elpd_loo, the best (largest) value is shown by hierarchical model, than comes the model with censored data, after that - simple pooled.
+Comparing the ELPD, the best (largest) value is shown by hierarchical model, than comes the model with censored data, after that the pooled model. It is worth noting, however, that the censored model was trained on more data since it included censored patients. This means that in theory it should have learned more information than the other two, and would thus not be comparable. However, since we find a better ELPD for the hierarchical model even given the difference in training data, we are comfortable concluding that it is the best of the three.
 
-Considering the p_loo values. For pooled the optimal number of parameters is ~5.5 (and, actually, there 7 in the model, the result is pretty close).
-For censored ~13 params are shown (there actually we have 15 parameters, agan the results are pretty close). For hierarchical model, the p_loo shows 6.6 parameters
+Considering the `p_loo` values. For pooled the optimal number of parameters is ~5.5 and given that there 7 in the model, the result is pretty close. For censored ~13 params are shown and we actually have 15 parameters, which is again pretty close. For the hierarchical model, the `p_loo` shows 6.6 parameters.
 
 ## Predictive performance assessment
 
-Elpd_loo is better than, for example, MSE for continuous variable prediction, as it evaluates the whole predictive distribution and not just the mean.
-For pooled elpd_loo = -632, for censored= - 527, for hierarchical = -486.
+We will use ELPD with leave-one-out cross validation as is put forward in @loo to measure predictive performance on the basis that it is better than, for example, MSE for continuous variable prediction, as it evaluates the whole predictive distribution and not just the mean.
+
+For the pooled model, $\text{ELPD} = -632$, for the pooled model censored using censored data, $\text{ELPD} = -527$, and for the hierarchical model, $\text{ELPD} = -486$. Knowing that all Pareto $\hat k$ values are reasonable, and that thus these values are reliable, we choose the hierarchical model as the best fitting model for our data.
 
 ## Prior sensitivity analysis
 
-The sensitivity of posterior inference about $\theta$ to the proposed prior distribution has been checked for models.
-The dataset in that work is not really small and posterior inferences based on a large sample are not particularly sensitive to the 
-prior distribution. The parameters of half-cauchy were changed a bit, as well as the Normal distribution for betas.
-The combinations tested were: cauchy(0,8) and Normal(0,10), cauchy(0,2) and Normal(0,10), cauchy(0,5) and Normal(0,20), cauchy(0,8) and Normal(0,20).
-The results in most cases remained the same.
+The sensitivity of the posterior distribution of our sampled parameters to the proposed prior distribution was checked for models.
+
+The dataset is not very small and posterior inferences based on large numbers of MCMC iterations tend to be not particularly sensitive to the prior distribution. The parameters of half-Cauchy were changed a bit, as well as the Normal distribution for betas. The combinations tested were: $\text{Cauchy}(0,8)$ and $\text{Normal}(0,10)$, $\text{Cauchy}(0,2)$ and $\text{Normal}(0,10)$, $\text{Cauchy}(0,5)$ and $\text{Normal}(0,20)$, $\text{Cauchy}(0,8)$ and $\text{Normal}(0,20)$. The results in most cases remained the same.
+
+In order to test the motivation set out in previous sections and in @taumain, the variance hyperparameter for the hierarchical model was changed to a Half-Cauchy (the suggested priors for fewer hierarchical groups), and in this case convergence was more difficult. As such, the rigidity and relative strength of the $\text{Gamma}(1, 1)$ helps convergence in this case with more groups. It is also worth noting, however, that changing the prior over the global $\alpha$ parameter from Half-Cauchy to Gamma has a large impact on the final result. We can draw from this information that the relative flexibility afforded by the weakly-informative Half-Cauchy prior allows the data to express itself more compared to the stronger and less flexible Gamma prior.
+
 

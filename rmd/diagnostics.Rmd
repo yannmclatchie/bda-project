@@ -7,10 +7,14 @@ We begin by plotting the rank-normalised $\hat R$ values for each of the three m
 ```{r}
 bayesplot_grid(
   mcmc_rhat(rhat = rhat(weibull_model)),
-  mcmc_rhat(rhat = rhat(weibull_hier)),
   mcmc_rhat(rhat = rhat(weibull_cens)),
-  titles = c("Pooled model", "Hierarchical model", "Censored model")
+  mcmc_rhat(rhat = rhat(weibull_hier)),
+  titles = c(
+    "Pooled model",
+    "Censored model",
+    "Hierarchical model"
   )
+)
 ```
 
 We find that all our models have converged, which is good news for our parameter estimates. We now look at the effective sample size of our MCMC draws for each our three models. The effective sample size, $n_{\text{eff}}$, is an estimate of the number of independent draws from the posterior distribution are statistically important towards estimating a given parameter. We will plot the ratio of $n_{\text{eff}}$ to $N$, the total number of samples, and hope to find this ratio to be as large as possible, since a larger $n_{\text{eff}}$ is indicative of stability across simulated sequence and that the simulations suffice for practical purposes as is argued in @bda3.
@@ -18,19 +22,17 @@ We find that all our models have converged, which is good news for our parameter
 ```{r}
 bayesplot_grid(
   mcmc_neff(neff_ratio(weibull_model)),
-  mcmc_neff(neff_ratio(weibull_hier)),
   mcmc_neff(neff_ratio(weibull_cens)),
-  titles = c("Pooled model", "Hierarchical model", "Censored model")
+  mcmc_neff(neff_ratio(weibull_hier)),
+  titles = c("Pooled model", "Censored model", "Hierarchical model")
   )
 ```
 
-We find that both the pooled model, model with censored data have very few parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data have a little more such parameters with $n_{\text{eff}}$ small, which leads us to be doubtful of the models future performance.
+We find that both the pooled model, model with censored data have very few parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data has some parameters with $n_{\text{eff}} \leq 0.1$, which is slightly concerning regarding the model's future performance.
 
 ## Divergence parameters
 
-There is small number of divergent transitions, which is identified by divergent__ being 1.
-Also, chains have a treedepth__ of at most 10 and the default is 10. The maximum number is not exceeded,
-so the sampler does not hit its limit on the number of leapfrog steps, taken per iteration.
+There is small number of divergent transitions, which is identified by `divergent__` being 1. Also, chains have a `treedepth__` of at most 10 and the default is 10. The maximum number is not exceeded, so the sampler does not hit its limit on the number of leapfrog steps, taken per iteration.
 
 ```{r}
 # pooled model
@@ -49,20 +51,13 @@ summary(do.call(rbind, hwm_sampler_params), digits = 2)
 We will now plot the posterior distributions of the weights of our regressors in our GLMs and the shape parameter $\alpha$ for our three models, starting with our pooled GLM not considering censored data.
 
 ```{r}
-regression_pars <- c(
-  "beta[1]",
-  "beta[2]",
-  "beta[3]",
-  "beta[4]",
-  "beta[5]",
-  "beta[6]",
-  "beta[7]",
-  "alpha"
-)
 weibull_posterior <- as.data.frame(weibull_model)
 mcmc_areas(
   weibull_posterior,
-  pars = regression_pars,
+  pars = colnames(weibull_posterior)[
+    (colnames(weibull_posterior) %like% "beta") 
+    | (colnames(weibull_posterior) %like% "alpha")
+  ],
   prob = 0.8,
   # 80% intervals
   prob_outer = 0.99,
@@ -77,7 +72,10 @@ These posterior distributions of the $\beta$ parameters in this model are very c
 cens_weibull_posterior <- as.data.frame(weibull_cens)
 mcmc_areas(
   cens_weibull_posterior,
-  pars = regression_pars,
+  pars = colnames(cens_weibull_posterior)[
+    (colnames(cens_weibull_posterior) %like% "beta") 
+    | (colnames(cens_weibull_posterior) %like% "alpha")
+  ],
   prob = 0.8,
   prob_outer = 0.99,
   point_est = "mean"
@@ -182,6 +180,7 @@ Elpd_loo is better than, for example, MSE for continuous variable prediction, as
 For pooled elpd_loo = -632, for censored= - 527, for hierarchical = -486.
 
 ## Prior sensitivity analysis
+
 The sensitivity of posterior inference about $\theta$ to the proposed prior distribution has been checked for models.
 The dataset in that work is not really small and posterior inferences based on a large sample are not particularly sensitive to the 
 prior distribution. The parameters of half-cauchy were changed a bit, as well as the Normal distribution for betas.

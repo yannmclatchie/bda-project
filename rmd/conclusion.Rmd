@@ -6,6 +6,55 @@ The problem may be that the distribution is rather skewed.
 Therefore, it is rather difficult to choose for it a competent distribution.
 In that work we chose Weibull, maybe in the future it'd interesting to try one more distribution - gamma or such extensions of exponential, like: exponentiated exponential (has properties, similar to Gamma distribution, but survival function like a Weibull).
 
+Another issue was the relatively low $n_\text{eff}$ of the hierarchical model. In certain situations, the group-level parameters do not constrain the hierarchical distribution closely enough. This can occur when we either have many groups or high variance between the groups. In order to make hierarchical model sampling more efficient and to improve effective sample size metrics, we could employ a so-called _non-centered parameterisation_, where we replace the parameterisation of 
+```
+parameters {
+  // GLM parameters
+  matrix[M, J] beta;            // regressors weights for different institutions
+  real<lower=0> alpha;          // shape parameter
+  ...
+}
+model {
+  // hyperpriors
+  mu_beta ~ std_normal();
+  sigma_beta ~ gamma(1, 1);
+  // prior over regressor and shape parameters
+  for (j in 1:J) {
+    beta[j] ~ normal(mu_beta, sigma_beta);
+  }
+  ...
+```
+to
+```
+parameters {
+  // hyperparameters
+  real mu_beta;
+  real<lower=0> sigma_beta;
+  // GLM parameters
+  matrix[M, J] beta_unif;       // non-centered parameterisation regressors
+  real<lower=0> alpha;          // shape parameter
+  ...
+}
+transformed parameters {
+  vector[M] beta[J];            // regressors weights for different institutions
+  // implies: beta ~ normal(mu_beta, sigma_beta)
+  for (j in 1:J) {
+    beta[j] = mu_beta + sigma_beta * beta_unif[j];
+  }
+  ...
+}
+model {
+  // hyperpriors
+  mu_beta ~ std_normal();
+  sigma_beta ~ gamma(1, 1);
+  // prior over regressor and shape parameters (non-centered parameterisation)
+  for (j in 1:J) {
+    beta_unif[j] ~ std_normal();
+  }
+  ...
+```
+so that our `beta`, `mu_beta` and `sigma_beta` are less correlated with our posterior, and thus increasing the effective sample size, as is shown in @betancourt2013hamiltonian. This reparameterisation, however, will likely not significantly improve $n_\text{eff}$ of the hierarchical model, as we have neither too many groups nor too many data. A Stan implementation is available at @git for further interest.
+
 Also, maybe it'd be worth to pay more attention to features and apply extra transformation (except mean-centering) or even extraction to them.
 Moreover, the priors can be tested even more accurately, variants like gamma can be tried.
 

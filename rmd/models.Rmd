@@ -34,9 +34,13 @@ for $y \in [0,\infty), \alpha \in \mathbb{R}^+,$ and $\sigma \in \mathbb{R}^+$.
 
 The Weibull distribution is often used as a more flexible and complex alternative to the semi-parametric proportional hazard Cox model for modelling time to failure events, since the hazard rate is not taken to be constant with time.
 
-### The Weibull distribution as a member of the exponential family
+### The Weibull distribution as a member of the Exponential family
 
-Now take $\alpha$ fixed and finite, then it can be shown that this distribution belongs to the exponential family since we can write it's probability density function
+A probability distribution $f(x\vert\vartheta)$ is a member of the Exponential family if it can be written in the form
+$$
+f(x\vert\vartheta) = h(x)\exp[\eta \cdot T(x) - A(\vartheta)],
+$$
+For some arbitrary parameter functions $h(\cdot), T(\cdot), A(\cdot)$, and canonical parameter $\eta$. Now take $\alpha$ fixed and finite, then it can be shown that this distribution belongs to the exponential family since we can write it's probability density function
 $$
 \text{Weibull}(y|\sigma) ={\alpha y^{\alpha -1}}\exp(-y^{\alpha}\sigma^{-\alpha}-\alpha\log\sigma),
 $$
@@ -66,9 +70,13 @@ In our Stan model, we will enforce two priors over each of the regressors in the
 y_i &\sim \text{Weibull}(\sigma, \alpha)\,,\quad i = 1,\dots,N,\\
 \alpha &\sim \text{Half-Cauchy}(5),\\
 \sigma &= \exp\left ( -\frac{\boldsymbol X \beta}{\alpha}\right ),\\
-\beta_k \sim& N(0, 10)\,,\quad k=1,\dots,M.\\
+\beta_j \sim& N(0, 1)\,,\quad j=1,\dots,M.\\
 \end{align*}
-The choice of a Half-Cauchy prior is motivated in @taumain, so that inferences are sensitive to the choice of weakly-informative priors. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In this pooled model, we model these parameters the same across all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in. This is seen visually below in Figure \ref{}.
+The choice of a Half-Cauchy prior is motivated in @taumain, so that inferences are sensitive to the choice of weakly-informative priors. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In this pooled model, we model these parameters the same across all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in. This is seen visually below in the directed acyclic graph below.
+
+```{r, echo=FALSE, out.width="50%"}
+knitr::include_graphics("./pooled.pdf")
+```
 
 ### Implemented in Stan
 
@@ -213,10 +221,16 @@ Here we implement a model with some global shape parameter to be learned, but in
 \begin{align*}
 y_{ij} &\sim \text{Weibull}(\sigma_j, \alpha)\,,\quad i = 1,\dots,N,\,j= 1,\dots,J\\
 \alpha &\sim \text{Half-Cauchy}(5),\\
-\sigma &\propto \boldsymbol X \beta,\\
-\beta_{kj} \sim& N(0, 1)\,,\quad k=1,\dots,M,\,j= 1,\dots,J.\\
+\sigma &\propto \boldsymbol X \beta,\,\text{via previously seen link function}\\
+\beta_{mj} \sim& N(\mu_\beta, \sigma_\beta)\,,\quad m=1,\dots,M,\\
+\mu_\beta &\sim N(0, 1),\\
+\sigma_\beta &\sim \text{Gamma}(1, 1).
 \end{align*}
-This is seen visually below in Figure \ref{}.
+This is seen visually below in the directed acyclic graph below.
+
+```{r, echo=FALSE, out.width="50%"}
+knitr::include_graphics("./hier.pdf")
+```
 
 ### Defining the link function
 

@@ -24,23 +24,23 @@ parameters {
   real sigma_beta;
   
   // GLM parameters
-  vector[M] beta_unif[J];       // non-centered parameterisation regressors
+  matrix[M, J] beta_unif;       // non-centered parameterisation regressors
   real<lower=0> alpha;          // shape parameter
 }
 
 transformed parameters {
-  vector[M] beta[J];            // regressors weights for different institutions
+  matrix[M, J] beta;            // regressors weights for different institutions
   vector[N] eta;
   vector<lower=0>[N] sigma;
   
   // implies: beta ~ normal(mu_beta, sigma_beta)
   for (j in 1:J) {
-    beta[j] = mu_beta + sigma_beta * beta_unif[j];
+    beta[, j] = mu_beta + sigma_beta * beta_unif[, j];
   }
   
   // compute latent predictor term
   for (n in 1:N) {
-    eta[n] = Xc[ll[n], ] * beta[ll[n]];
+    eta[n] = Xc[ll[n], ] * beta[, ll[n]];
   }
   // apply the log inverse link function
   sigma = exp(-eta / alpha);

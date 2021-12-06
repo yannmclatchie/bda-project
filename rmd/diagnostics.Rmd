@@ -17,7 +17,7 @@ bayesplot_grid(
 )
 ```
 
-We find that all our models have converged and that the chains agree on all parameters, which is good news for our parameter estimates. We now look at the effective sample size of our MCMC draws for each our three models. The effective sample size, $n_{\text{eff}}$, is an estimate of the number of independent draws from the posterior distribution the are statistically important towards estimating a given parameter, as is defined in @bda3. We will plot the ratio of $n_{\text{eff}}$ to $N$, the total number of samples, and hope to find this ratio to be as large as possible, since a larger $n_{\text{eff}}$ is indicative of stability across a simulated sequence, and @bda3 argue that this indicates the simulations suffice for practical purposes.
+We find that all our models have converged and that the chains agree on all parameters, which is good news for our parameter estimates. We now look at the effective sample size of our MCMC draws for each our three models. The effective sample size, $n_{\text{eff}}$, is an estimate of the number of independent draws from the posterior distribution the are statistically important towards estimating a given parameter, as is defined in @bda3. We will plot the ratio of $n_{\text{eff}}$ to $N$, the total number of samples, and hope to find this ratio to be as large as possible, since a larger $n_{\text{eff}}$ is indicative of stability across a simulated sequence, and @bda3 argues that this indicates the simulations suffice for practical purposes.
 
 ```{r}
 bayesplot_grid(
@@ -28,11 +28,11 @@ bayesplot_grid(
   )
 ```
 
-We find that both the pooled models have no parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, which we consider to be the critical threshold as is given in @bda3, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data has some parameters with $n_{\text{eff}} / N \leq 0.1$, which is slightly concerning regarding the model's future performance.
+We find that both the pooled models have no parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, which we consider to be the critical threshold as is given in @bda3, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data has some parameters with $n_{\text{eff}} / N \leq 0.1$, which is slightly concerning regarding the stability model's parameter estimates, but we nonetheless move on.
 
 ## Divergence parameters
 
-As is explained in the Stan documentation, for target distributions whose features are difficult to resolve, the MCMC may miss some samples relating to these features and thus returun a biased estimate, which manifests itself as a divergence. There are no divergent transitions in any of our three model, which is identified by `divergent__` being equal to $0$. 
+As is explained in the Stan documentation, for target distributions whose features are difficult to resolve, the MCMC may miss some samples relating to these features and thus return a biased estimate, which manifests itself as a divergence. There are no divergent transitions in any of our three model, which is identified by `divergent__` being equal to $0$ in the below summaries. 
 
 Also, chains have a `treedepth__` of at most 10 which is also the default, and a much lower average. Since the maximum number is not exceeded, the sampler does not hit its limit on the number of leapfrog steps taken per iteration. This does not impact the validity of our estimates, but if we had exceeded the maximum `treedepth`, then our sampling may have been inefficient.
 
@@ -59,11 +59,11 @@ bayesplot::mcmc_nuts_divergence(nuts_params(weibull_cens), log_posterior(weibull
 bayesplot::mcmc_nuts_divergence(nuts_params(weibull_hier), log_posterior(weibull_hier))
 ```
 
-We find that there are no divergences following the warmup, which means our posterior estimates in our target distribution less likely to be biased.
+We find that there are no divergences following the warmup, which means our posterior estimates in our target distribution less likely to be biased, and the acceptance statistics are skewed quite high, suggesting our sampling is quite efficient. All of these are reassuring discoveries with regards to the utility of our models.
 
 ## Intervals for posterior data
 
-We will now plot the posterior distributions of the weights of our regressors in our GLMs and the shape parameter $\alpha$ for our three models, starting with our pooled GLM not considering censored data.
+We will now plot the posterior distributions of the weights of our regressors $\beta$ in our GLMs and the shape parameter $\alpha$ for our three models, starting with our pooled GLM not considering censored data.
 
 ```{r}
 weibull_posterior <- as.data.frame(weibull_model)
@@ -81,7 +81,7 @@ mcmc_areas(
 )
 ```
 
-These posterior distributions of the $\beta$ parameters in this model are very clearly centered around the origin, and in some cases, may not be hugely informative to our variate. The $\alpha$ parameter seems to have well converged, and to a non-zero value which is a good sign. We move now to the model considering censored data.
+These posterior distributions of the $\beta$ parameters in this model are very clearly centered around the origin, and in some cases, may not be hugely informative in the linear model. The $\alpha$ parameter seems to have well converged, and to a non-zero value which is a good sign. We move now to the model considering censored data.
 
 ```{r}
 cens_weibull_posterior <- as.data.frame(weibull_cens)
@@ -113,7 +113,7 @@ mcmc_areas(
   )
 ```
 
-Once more we find a lot of regressor parameters including zero in their 80% credible interval, as well as several more significant parameters. We also find that the signficant parmeters differ slightly between institutions, suggesting that the hazard does change as a function of which institution a patient has been admitted to. Causality, of course, can not be concluded however.
+Once more we find a lot of regressor parameters including zero in their 80% credible interval, while some parameters are more significant. We also find that the signficant parmeters differ slightly between institutions, suggesting that the hazard does change as a function of which institution a patient has been admitted to. Causality, of course, can not be concluded however, and the statistical significance of these differences was not explicitly tested.
 
 ## Posterior predictive checks
 
@@ -130,9 +130,9 @@ bayesplot::bayesplot_grid(
 )
 ```
 
-For pooled model the posterior results are similar to original survival survival distribution. Here, the censored data is not inclulded, so all the data is mainly concentrated near particular peak. For censored model the posterior draws are similar to the original distribution. However, for some replicates the peak of the distribution is a little bit lower than for original data. For hierarchical model there are more broaden results, as here different institutional groups are taken into consideration. The predictive values in most cases follow the same distribution with, of course, some noise.
+For the pooled model the posterior results are clearly similar to original survival survival distribution. Here, the censored data is not inclulded, so all the data is mainly concentrated near a particular peak. For the censored model the posterior draws are again similar to the original distribution. However, for some replicates the peak of the distribution is a little bit lower than for original data. For the hierarchical model there are more broad results, as here different institutional groups are taken into consideration. The predictive values in all cases follow the same distribution with of course some noise.
 
-All in all, the posterior predictive distributions from our three models seem to match the original data, which suggests that the models are reasonable in their desgin and have produced good predictions.
+All in all, the posterior predictive distributions from our three models seem to match the original data, which suggests that the models are reasonable in their desgin and have produced good predictions. Importantly, it increases our confidence in their predictive performance which we presently move on to discuss.
 
 ## Model comparison using leave-one-out cross-validation and WAIC
 
@@ -184,7 +184,7 @@ hwm_loo
 
 Comparing the ELPD, the best model (with the highest ELPD) is the hierarchical model, followed by the pooled model with censored data, and finally the pooled model without censored data. It is worth noting, however, that the censored model was trained on more data since it included censored patients. This means that in theory it should have learned more information than the other two, and is not necessarily comparable. However, since we find a better ELPD for the hierarchical model even given the difference in training data, we are comfortable concluding that it is the best of the three.
 
-Considering the `p_loo` values. For pooled the effictive number of parameters is ~5.5 and given that there 7 in the model, this suggests that our parameters are mostly significant. For the censored pooled model ~13 effective parameters are shown and we actually have 15 parameters, which is again demostrative of significant parameters. For the hierarchical model, the `p_loo` shows 6.6 parameters which is much fewer than were trained, and so we understand that most of them are not significant. In this sense, the censored model on pooled data has found the most effective parameters.
+Considering the `p_loo` values. For the pooled model, the effictive number of parameters is ~5.5 and given that there 7 in the model, this suggests that our parameters are mostly significant. For the censored pooled model ~13 effective parameters are shown and we actually have 15 parameters, which is again demostrative of significant parameters. For the hierarchical model, the `p_loo` shows 6.6 parameters which is much fewer than were trained, and so we understand that most of them are not significant. In this sense, the censored model on pooled data has found the most effective parameters.
 
 We show also the WAIC values below, and achieve the same conclusion although understanding that our LOO values are more accurate.
 

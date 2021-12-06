@@ -2,7 +2,7 @@
 
 ## Issues and improvements
 
-The target distribution in the data is rather skewed, making it is rather difficult to learn. In that work we chose Weibull to model it, although it would be interesting to investigate the performance of Exponential (which has properties similar to the Gamma distribution, but a survival function like a Weibull), or a Cox regression.
+The target distribution in the data is quite skewed, making it is rather difficult to learn. In this work we chose a Weibull distribution to model it, although it would be interesting to investigate the performance of Exponential (which has properties similar to the Gamma distribution, but a survival function like a Weibull), or a Cox regression.
 
 Another issue was the relatively low $n_\text{eff}$ of the hierarchical model, and one critically low $n_\text{eff} / N$ statistic. In certain situations, the group-level parameters do not constrain the hierarchical distribution closely enough. This can occur when we either have many groups or high variance between the groups. In order to make hierarchical model sampling more efficient and to improve effective sample size metrics, we could employ a so-called _non-centered parameterisation_, where we replace the parameterisation of 
 ```
@@ -35,7 +35,7 @@ parameters {
 }
 transformed parameters {
   vector[M] beta[J];            // regressors weights for different institutions
-  // implies: beta ~ normal(mu_beta, sigma_beta)
+  // beta ~ normal(mu_beta, sigma_beta)
   for (j in 1:J) {
     beta[j] = mu_beta + sigma_beta * beta_unif[j];
   }
@@ -51,18 +51,18 @@ model {
   }
   ...
 ```
-so that our `beta`, `mu_beta` and `sigma_beta` are less correlated with our posterior, and thus increasing the effective sample size, as is shown in @betancourt2013hamiltonian. This reparameterisation, however, will likely not significantly improve $n_\text{eff}$ of the hierarchical model, as we have neither too many groups nor too many data. A Stan implementation is available at @git for further interest.
+so that our `beta`, `mu_beta` and `sigma_beta` are less correlated with our posterior, and thus increasing the effective sample size, as is shown in @betancourt2013hamiltonian. This reparameterisation, however, will likely not significantly improve $n_\text{eff}$ of the hierarchical model, as we have neither too many groups nor too much data. A Stan implementation is available at @git for further interest.
 
 Some warnings were returned relating to low Bayesian Fraction of Missing Information estimates. @betancourt2013hamiltonian suggests that this is indicative of an improper adaptation phase in the Markov Chains, and thus results in an inefficient exploration of the posterior distribution. Much like the treedepth statistic, this is an efficiency concern as opposed to a validity concern. Increasing the number of warmup steps of MCMC iterations might help combat this.
 
-Also, maybe it might be worth paying more attention to features and applying extra transformation (except mean-centering) or even extraction to them. Moreover, the priors can be tested even more accurately, and more exotic distributions could be tried.
+Also, maybe it might be worth paying more attention to features and applying extra transformation (as well as mean-centering) or even extraction to them. We could also try repeating the analysis without mean-centering the binary variables in the data to see if this would improve the significance of the respective regressors. Moreover, the priors can be tested even more accurately, and more exotic distributions could be tried.
 
 The sampling algorithms needs rather large number of iteration to converge, so perhaps changing the architecture of the model (link function, feature selection, etc.) could also be considered in future.
 
 ## Things learnt from the data analysis
 
-It was understood that the survival time of patients with advanced lung cancer can be approximated well by Weibull distribution. Further, understanding which institution an individual has been admitted to aids predictive performance. That is why, the model with hierarchical structure, which provides a little different distributions for each institute parameters is better. This was confirmed by ELPD and WAIC parameters, and validated by Pareto $\hat k$ diagnostic plot. 
+It was understood that the survival time of patients with advanced lung cancer can be modeled well with a Weibull GLM. Further, we concluded that understanding which institution an individual has been admitted to impacts their survival time, and incorporating this into our model aided predictive performance. We ultimately found this hierarchical model to be the best of the three presented in the report. This was confirmed by ELPD and WAIC parameters, and validated by the Pareto $\hat k$ diagnostic plot.
 
 ## Self-reflection and learnings
 
-The group learnt a lot about the applications of MCMC methods to survival analysis, domain specific notation, and vocabulary. The group were also afforded the opportunity to dive deep into more exotic distributions such as the Weibull and Caucy distributions, and to apply these in GLMs. The process of prior ellicitation and model building, including motivating a link function in a non-standard GLM, was very informative. Last but not least, some functions and packages in `R` connected with bayesian statistics were discovered, and used effectively.
+The group learnt a lot about the applications of MCMC methods to survival analysis, domain specific notation, and vocabulary. The group were also afforded the opportunity to dive deep into more exotic distributions such as the Weibull and Cauchy distributions, and to apply these in GLMs. The process of prior ellicitation and model building, including motivating a link function in a non-standard GLM, was very informative. Last but not least, some functions and packages in `R` connected with bayesian statistics were discovered, and used effectively.

@@ -1,6 +1,6 @@
 # Description of models
 
-In the following section, we will motivate and define mathematically three Generalised Linear Models (GLMs) implemented in Stan for survival time prediction. We begin by importing the necessary packages and setting a random seed for reproducibility.
+In the following section, we will motivate and define mathematically our three GLMs implemented in Stan for survival time prediction. We begin by importing the necessary packages and setting a random seed for reproducibility.
 
 ```{r, message=FALSE, warning=FALSE}
 # install libraries
@@ -21,7 +21,7 @@ set.seed(2021)
 
 ## Weibull without censored data
 
-Our first model will be a pooled model, not considering any censored data points. Let $y \sim \text{Weibull}(\alpha, \sigma)$, so that
+Our first model will be a pooled model, not considering any censored data points. Let $y \sim \text{Weibull}(\alpha, \sigma)$, we define the probability density function or our Weibull-distributed $y$ as
 $$
 \text{Weibull}(y|\alpha,\sigma) =
 \frac{\alpha}{\sigma} \, \left( \frac{y}{\sigma} \right)^{\alpha - 1}
@@ -32,15 +32,15 @@ for $y \in [0,\infty), \alpha \in \mathbb{R}^+,$ and $\sigma \in \mathbb{R}^+$.
 
 ### Motivating the distribution
 
-The Weibull distribution is often used as a more flexible and complex alternative to the semi-parametric proportional hazard Cox model for modelling time to failure events, since the hazard rate is not taken to be constant with time. We will use this as our base for all models in this analysis to differentiate ourselves from previous analyses.
+The Weibull distribution is often used as a more flexible and complex alternative to the semi-parametric proportional hazard Cox model for modelling time to failure events, since the hazard rate is not taken to be constant with time. We will use this as our base for all models in this analysis to differentiate ourselves from previous analyses, and hopefully outperform them.
 
 ### The Weibull distribution as a member of the Exponential family
 
-A probability distribution $f(x\vert\vartheta)$ is a member of the Exponential family if it can be written in the form
+A probability distribution $f(y\vert\vartheta)$ is a member of the Exponential family if it can be written in the form
 $$
-f(y\vert\vartheta) = h(x)\exp[\eta(\vartheta) \cdot T(x) - A(\vartheta)],
+f(y\vert\vartheta) = h(y)\exp[\eta(\vartheta) \cdot T(y) - A(\vartheta)],
 $$
-For some arbitrary parameter functions $h(\cdot), T(\cdot), A(\cdot)$, and canonical parameter $\eta(\vartheta)$ as a function of the parameters $\vartheta = (\sigma, \alpha)^T$. Now take $\alpha$ fixed and finite, then it can be shown that the Weibull distribution belongs to the exponential family since we can write it's probability density function as
+for some arbitrary parameter functions $h(\cdot), T(\cdot), A(\cdot)$, and canonical parameter $\eta(\vartheta)$ as a function of the parameters $\vartheta = (\sigma, \alpha)^T$. Now take $\alpha$ fixed and finite, then it can be shown that the Weibull distribution belongs to the exponential family since we can write it's probability density function as
 $$
 \text{Weibull}(y|\sigma) ={\alpha y^{\alpha -1}}\exp(-y^{\alpha}\sigma^{-\alpha}-\alpha\log\sigma),
 $$
@@ -59,26 +59,26 @@ Looking at our canonical statistic $\eta=\sigma^{-\alpha}$, it can be shown that
 $$
 \sigma=\exp{({\frac{\log\eta}{-\alpha}})}
 $$
-where we construct $\eta = \exp(\boldsymbol X\beta)$ so that $\eta$ is always strictly positive and the logarithm is defined. Thus we choose a log link function for our GLM such that
+where we construct $\eta = \exp(\boldsymbol X\beta)$ so that $\eta$ is always strictly positive given any linear combination of the covariates, and the logarithm is then defined. Thus we choose a log link function for our GLM such that
 $$
 \sigma = \exp(-\frac{\boldsymbol X\beta}{\alpha}),
 $$
-which resembles a vanilla logarithmic inverse link function, with the additional $alpha$ term and negation.
+which resembles a vanilla logarithmic inverse link function, with the additional $\alpha$ term and the negation.
 
 ### Priors
 
-In our Stan model, we will enforce two priors over each of the regressors in the linear model, $\beta$, and the shape parameter $\alpha$ of our Weibull distribution. Mathematically, where we have $N$ data points and $M$ covariates, the model is defined as
+In our Stan model, we will enforce priors over each of the regressors in the linear model, $\beta$, and the shape parameter $\alpha$ of our Weibull distribution. Mathematically, where we have $N$ data points and $M$ covariates, the model is defined as
 \begin{align*}
 y_i &\sim \text{Weibull}(\sigma, \alpha)\,,\quad i = 1,\dots,N,\\
 \alpha &\sim \text{Half-Cauchy}(5),\\
 \sigma &= \exp\left ( -\frac{\boldsymbol X \beta}{\alpha}\right ),\\
-\beta_j \sim& N(0, 1)\,,\quad j=1,\dots,M.\\
+\beta_j &\sim N(0, 1)\,,\quad j=1,\dots,M.\\
 \end{align*}
-The choice of a Half-Cauchy prior is motivated by @taumain, so that the posterior is less sensitive to the choice of weakly-informative prior since it is more flexible than the Gamma alternative and the data can express themselves more freely. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In short, it acts as an appropriate weakly-informative prior satisfying the positive constraint, and given that we expect the value of $\alpha$ to be below 10. Our Gaussian prior over the regressors is easily motivated by the parameterisation of the data. We will mean-center the design matrix before performing our regression in a `transformed data` block. This standardisation will hopefully reduce variance in our regressors and make learning their weights easier. We expect the weights of the regressors to be close to zero, and we allow them to be negative, making this an appropriate prior. In fact, the fact that the variance is not very large should aid convergence later.
+The choice of a Half-Cauchy prior is motivated by @taumain, so that the posterior is more flexible than the Gamma alternative, and the data can express themselves more freely. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In short, it acts as an appropriate weakly-informative prior satisfying the positive constraint, and given that we expect the value of $\alpha$ to be below 10 but allow for some deviance from this range. Our Gaussian prior over the regressors is easily motivated by the parameterisation of the data, and is standard in literature. We will mean-center the design matrix before performing our regression in a `transformed data` block. This standardisation will hopefully reduce variance in our regressors and make learning their weights easier. We expect the weights of the regressors to be close to zero, and we allow them to be negative, making this an appropriate prior. In fact, the fact that the variance is not very large should aid convergence later, since our priors are stronger than for example a $N(0, 100)$ prior.
 
-In this pooled model, we model these parameters using data from all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in. This is seen visually below in the directed acyclic graph below.
+In this pooled model, we model these parameters using data from all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in. This is seen visually in the directed acyclic graph in Figure 3 below.
 
-```{r, echo=FALSE, out.width="50%", fig.align="center"}
+```{r, echo=FALSE, out.width="50%", fig.align="center", fig.cap="Pooled model DAG"}
 knitr::include_graphics("./rmd/pooled.pdf")
 ```
 
@@ -231,7 +231,7 @@ weibull_cens = rstan::sampling(cwm, data = data_model, iter = 10000)
 
 ## Hierarchical Weibull without censored data
 
-Here we implement a model with some global shape parameter $\alpha$ to be learned as in the pooled model, but independent regressor parameters $\beta_j$ for each institution $j$. Once more, we ignore the censored data. By virtue of this, we need not worry about the more complex distribution functions shown above, but we do sacrifice the number of data points we can learn from for each institution. We now consider our model in terms of the same $N$ data points and $M$ regressors, but we will estimate our covariate's weight according to the institution, of which we have $J$ in total. Thus our model is defined as
+Here we implement a model with some global shape parameter $\alpha$ to be learned as in the pooled model, but independent regressor parameters $\beta_j$ for each institution $j$. Once more, we ignore the censored data. By virtue of this, we need not worry about the more complex distribution functions shown above, but we do sacrifice the number of data points we can learn from for each institution. We now consider our model in terms of the same $N$ data points and $M$ regressors, but we will estimate the covariates' weights according to the institution, of which we have $J$ in total. Thus our model is defined mathematically as
 \begin{align*}
 y_{ij} &\sim \text{Weibull}(\sigma_j, \alpha)\,,\quad i = 1,\dots,N,\,j= 1,\dots,J\\
 \alpha &\sim \text{Half-Cauchy}(5),\\
@@ -240,19 +240,21 @@ y_{ij} &\sim \text{Weibull}(\sigma_j, \alpha)\,,\quad i = 1,\dots,N,\,j= 1,\dots
 \mu_\beta &\sim N(0, 1),\\
 \sigma_\beta &\sim \text{Gamma}(1, 1).
 \end{align*}
-This is seen visually below in the directed acyclic graph below.
+This is seen visually in the directed acyclic graph in Figure 3 below.
 
-```{r, echo=FALSE, out.width="50%", fig.align="center"}
+```{r, echo=FALSE, out.width="50%", fig.align="center", fig.cap="Hierarchical model DAG"}
 knitr::include_graphics("./rmd/hier.pdf")
 ```
 
 ### Defining the link function
 
-The link function used is the same as that shown in the first model.
+The link function used is the same as that shown in the first model, and is similarly motivated.
 
 ### Priors
 
-The same global priors are used for the hierarchical model as the pooled model. We motivate a Gamma hyperprior over the variance of $\beta$ with @taumain, since we have 7 different groups, a Half-Cauchy will be too sensitive to different group data whereas a Gamma will be more stable for more groups and aid convergence. We have a standard Gaussian hyperprior over the the mean of $\beta$, which we can motivate since the value of $\beta$ can be either positive or negative so this allows the groups to express themselves either way, and this is a standard hyperprior over a mean we assume to have zero mean in literature.
+The same global priors are used for the hierarchical model as the pooled model. 
+
+We motivate a Gamma hyperprior over the variance of $\beta$ with @taumain, since we have 7 different groups, a Half-Cauchy will be too sensitive to different group data whereas a Gamma will be more stable for more groups and aid convergence as a result. We have a standard Gaussian hyperprior over the the mean of $\beta$, which we can motivate since the value of $\mu_\beta$ can be either positive or negative so this allows the groups to express themselves either way, and this is a standard hyperprior over a mean we assume to have zero mean.
 
 ### Implemented in Stan
 

@@ -1,14 +1,14 @@
 # Introduction
 
-Lung cancer is one of the most common types of cancer in both men and women. The analysis of survival time of patients with lung cancer is crucial for controlling the disease development, determining the optimal course of treatment, and understanding what influences the disease's progression. To accomplish these aims, accurate survival time analysis methods is crucial.
+Lung cancer is one of the most common types of cancer in both men and women. The analysis of survival time of patients with lung cancer is crucial for controlling the disease's development, determining the optimal course of treatment, and understanding what influences the disease's progression. To accomplish these aims, accurate survival time analysis methods are crucial.
 
-Survival analysis is the combination of different statistical methods for analysing time-to-event data. Executing a survival analysis can be challenging, since different models both non-parametric and parametric can be used, and various distributions like exponential, Weibull, and log-normal are all often applicable. The most common model is the Cox hazard model, however it is too simple for this case as it proposes a constant effect of predictor variables on survival duration throughout time which we know to be untrue.
+Survival analysis is the combination of different statistical methods for analysing time-to-event data. Executing a survival analysis can be challenging, since both non-parametric and parametric models can be used, and various distributions such as exponential, Weibull, and log-normal are often all applicable. The most common model is the Cox hazard model which proposes a constant effect of predictor variables on survival duration (known as the hazard function) throughout time, which we know to be unrealistic, and thus consider to be too simple for this case.
 
-This study employs a Bayesian Weibull model of the survival time of patients with advanced lung cancer. The Weibull approach is more flexible than Cox, and the hazard rate is not assumed to be constant with time. For simulation Bayesian inference with MCMC is used, providing us with a satisfying approximation of uncertainty and ability to use priors from domain knowledge. The model is implemented and tested with the help of the R and Stan packages.
+This study employs a Bayesian Weibull Generalised Linear model (GLM) of the survival time of patients with advanced lung cancer. The Weibull approach is more flexible than Cox, and the hazard rate is not assumed to be constant with time. For simulation Bayesian inference with Markov Chain Monte Carlo (MCMC) is used, providing us with a satisfying approximation of uncertainty and ability to use priors from domain knowledge. The model is implemented and tested with the help of the R and Stan packages.
 
-We will investigate the efficacy of three models: a model with data pooled across insitutions and trained on only observed data, a similarly pooled model using censored data, and a hierarchical model using only observed data. The respective models will eventually be compared with regards to their predictive power, and we will conclude that our hierarchical model is most performant and conclude with a discussion on its implications.
+We will investigate the efficacy of three models: a model with data pooled across insitutions and trained on only observed data, a similarly pooled model using censored data, and a hierarchical model using only observed data. The respective models will eventually be compared with regards to their predictive power, and we will conclude that our hierarchical model is the most performant and conclude with a discussion on its implications.
 
-The code for the report, complete model implementations is provided in @git.
+The code for the report, complete with model implementations in R and Stan, is provided in @git.
 
 ## Data description
 
@@ -18,7 +18,7 @@ The data used in the study include the survival time of patients with advanced l
 
 Our dataset contains 9 features and 149 observations, which we divide into 7 institutional groups, and which we assume to be independent and identically distributed. The target variable is the survival time in days. The covariates are of both categorical and numerical data types.
 
-Special attention has to be paid to the "censored status" indicator. It indicates if the patient had some terminal event (in which case it is equal to $1$) or not (equal to $0$). If patient is censored, true survival time for him is not known. A right censoring approach is used, meaning incompleteness of survival time at the right side of the follow-up period.
+Special attention has to be paid to the "censored status" indicator. It indicates if the patient had some terminal event (in which case it is equal to $1$) or not (equal to $0$). If the data for a patient are censored, their true survival time is not known. A right censoring approach is used, meaning incompleteness of survival time at the right side of the follow-up period.
 
 Our variables, and their descriptions adapted from @survival-package, are as follows:
 
@@ -37,7 +37,7 @@ Variable | Description
 
 ### Exploratory data analysis
 
-It is better to provide some descriptive statistics to familiarise ourselves with the data. We begin by importing the necessary packages.
+We provide some descriptive statistics to familiarise ourselves with the data, beginning by importing the necessary packages.
 
 ```{r,warning=FALSE,message=FALSE,results=FALSE}
 library(dplyr)
@@ -45,7 +45,7 @@ library(ggplot2)
 data("cancer", package = "survival")
 ```
 
-There were 44 observations with missed values, which have been removed from dataset, leaving 105 rows.
+There were 44 observations with missed values, which have been removed from dataset, leaving 105 observations.
 
 ```{r}
 data = cancer %>% 
@@ -53,13 +53,13 @@ data = cancer %>%
   na.omit()
 ```
 
-Institutions are considered as grouping variables, useful for hierarchical model. Note that to make this analysis more manageable, we are only considering data from the top 7 institutions in terms of number of datapoints for all models.
+Institutions are considered as grouping variables, used later in the hierarchical model. Note that to make this analysis more manageable, we are only considering data from the top 7 institutions in terms of number of observations for all models.
 
 ```{r}
 table(data$inst)
 ```
 
-Moving to categorical variables below (fig. 1), we have more men than women in our data. The majority of patients are ambulatory with symptoms.
+Moving to categorical variables below in Figure 1, we have more men than women in our data, and note that the majority of patients are ambulatory with symptoms.
 
 ```{r,fig.width=8,fig.height=4,fig.cap="Categorical variables"}
 par(mfrow=c(1,2))
@@ -71,7 +71,7 @@ barplot(table(data$ph.ecog), main="ECOG score statistics",
         col=c("steelblue","cornflowerblue","blue","darkblue"))
 ```
 
-Investigating the distribution of continuous variables in fig. 2, we find that the features do not follow a normal distribution.
+Investigating the distribution of continuous variables in Figure 2, we find that the features do not follow a normal distribution.
 
 ```{r,fig.width=6,fig.height=6,fig.cap="Continuous variables"}
 par(mfrow=c(3,2))
@@ -82,7 +82,7 @@ hist(data$meal.cal, freq=FALSE, col="cornflowerblue", main="Histogram of meal.ca
 hist(data$wt.loss, freq=FALSE, col="cornflowerblue", main="Histogram of wt.loss",xlab="")
 ```
 
-It is also useful to identify if there is linear correlation between variables. The correlation is not that high, and only the pair ph.karno and pat.karno is highly correlated (0.525), but this is reasonable since patients and doctors may measure the same quantity, or agree on the quantity measured.
+It is also useful to identify any linear correlations between variables. The correlation is not that high across the board, and only the pair `ph.karno` and `pat.karno` are highly correlated (0.525), but this is intuitively reasonable given the previous description of these covariates, since patients and doctors may measure the same quantity, or agree on the quantity measured.
 
 ```{r}
 cor(data[c(4,7,8,9,10)], method=c("pearson"))
@@ -90,4 +90,4 @@ cor(data[c(4,7,8,9,10)], method=c("pearson"))
 
 ## Related studies
 
-The original data was presented in @original, where the authors just provided descriptive information from a lung patient-completed questionnaire, which was aggregated into dataset.  In @parametric-survival the comparison of semi-parametric and non-parametric models for survival analysis was presented, but a different dataset was used, and there was no deep description of Weibull model implementation. Instead, more attention was payed to Cox regression. @exponential-model provided a description of exponential models applied to a lung cancer survival time analysis with Stan code, but the Weibull distribution was only mentioned in passing and no models or conclusions were derived for it. That is why in our work three Weibull Survival models are built: one hierarchical and two pooled which will all be described in the following section. The main approaches and survival analysis theory was adapted and inspired from the studies above, but the Stan implementation, data preprocessing, and choice of priors were all made by the authors.
+The original data were presented in @original, where the authors just provided descriptive information from a lung patient-completed questionnaire, which was aggregated into the given dataset. In @parametric-survival the comparison of semi-parametric and non-parametric models for survival analysis was presented, but a different dataset was used, and there was no serious description of Weibull model implementation. Instead, more attention was payed to Cox regression. @exponential-model provided a description of exponential models applied to a lung cancer survival time analysis with Stan code, but the Weibull distribution was only mentioned in passing and no models or conclusions were derived for it. That is why in our work three Weibull Survival models are built: one hierarchical and two pooled which will all be described in the following section. The main approaches and survival analysis theory were inspired from the studies above, but the Stan implementation, data preprocessing, choice of priors, and interpretation were all performed by the authors.

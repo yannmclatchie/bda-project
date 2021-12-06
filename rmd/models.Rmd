@@ -240,7 +240,7 @@ y_{ij} &\sim \text{Weibull}(\sigma_j, \alpha)\,,\quad i = 1,\dots,N,\,j= 1,\dots
 \mu_\beta &\sim N(0, 1),\\
 \sigma_\beta &\sim \text{Gamma}(1, 1).
 \end{align*}
-This is seen visually in the directed acyclic graph in Figure 3 below.
+This is seen visually in the directed acyclic graph in Figure 4 below.
 
 ```{r, echo=FALSE, out.width="50%", fig.align="center", fig.cap="Hierarchical model DAG"}
 knitr::include_graphics("./rmd/hier.pdf")

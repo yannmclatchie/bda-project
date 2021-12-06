@@ -36,5 +36,8 @@ urlcolor: blue
 ```{r child = 'rmd/models.Rmd'}
 ```
 
+```{r child = 'rmd/diagnostics.Rmd'}
+```
+
 ```{r child = 'rmd/conclusion.Rmd'}
 ```

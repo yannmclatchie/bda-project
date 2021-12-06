@@ -2,7 +2,7 @@
 
 ## $\hat R$ and effective sample size
 
-We begin by plotting the rank-normalised $\hat R$ values for each of the three models in accordance with @rhat, which provides an improved comparison of the between-chain and within-chain estimates for each model parameter. If the chains have not mixed well, then we expect this value of $\hat R$ to be larger than $1$. Contrarily, if we find that the $\hat R$ for all model parameters are below $1.05$, then we will conclude that the chains have mixed well and agree on the parameter estimates.
+We begin by plotting the rank-normalised $\hat R$ values for each of the three models in accordance with @rhat, which provides an improved comparison of the between-chain and within-chain estimates for each model parameter. If the chains have not mixed well, then we expect this value of $\hat R$ to be significantly larger than $1$. Contrarily, if we find that the $\hat R$ for all model parameters are below $1.05$, then we will conclude that the chains have mixed well and agree on the parameter estimates. Below, we plot the $\hat R$ values of each parameter for all three models.
 
 ```{r}
 bayesplot_grid(
@@ -17,7 +17,7 @@ bayesplot_grid(
 )
 ```
 
-We find that all our models have converged and that the chains agree on the estimates, which is good news for our parameter estimates. We now look at the effective sample size of our MCMC draws for each our three models. The effective sample size, $n_{\text{eff}}$, is an estimate of the number of independent draws from the posterior distribution are statistically important towards estimating a given parameter. We will plot the ratio of $n_{\text{eff}}$ to $N$, the total number of samples, and hope to find this ratio to be as large as possible, since a larger $n_{\text{eff}}$ is indicative of stability across simulated sequence and that the simulations suffice for practical purposes as is argued in @bda3.
+We find that all our models have converged and that the chains agree on all parameters, which is good news for our parameter estimates. We now look at the effective sample size of our MCMC draws for each our three models. The effective sample size, $n_{\text{eff}}$, is an estimate of the number of independent draws from the posterior distribution the are statistically important towards estimating a given parameter, as is defined in @bda3. We will plot the ratio of $n_{\text{eff}}$ to $N$, the total number of samples, and hope to find this ratio to be as large as possible, since a larger $n_{\text{eff}}$ is indicative of stability across a simulated sequence, and @bda3 argue that this indicates the simulations suffice for practical purposes.
 
 ```{r}
 bayesplot_grid(
@@ -28,11 +28,13 @@ bayesplot_grid(
   )
 ```
 
-We find that both the pooled models have no parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data has some parameters with $n_{\text{eff}} \leq 0.1$, which is slightly concerning regarding the model's future performance.
+We find that both the pooled models have no parameters with a $n_{\text{eff}} / N$ ratio of below $0.1$, which we consider to be the critical threshold as is given in @bda3, and thus we can assume that the simulations are stable and should suffice for practical purposes. However, the hierarchical model not considering censored data has some parameters with $n_{\text{eff}} / N \leq 0.1$, which is slightly concerning regarding the model's future performance.
 
 ## Divergence parameters
 
-There is small number of divergent transitions, which is identified by `divergent__` being 1. Also, chains have a `treedepth__` of at most 10 and the default is 10. The maximum number is not exceeded, so the sampler does not hit its limit on the number of leapfrog steps, taken per iteration.
+As is explained in the Stan documentation, for target distributions whose features are difficult to resolve, the MCMC may miss some samples relating to these features and thus returun a biased estimate, which manifests itself as a divergence. There are no divergent transitions in any of our three model, which is identified by `divergent__` being equal to $0$. 
+
+Also, chains have a `treedepth__` of at most 10 which is also the default, and a much lower average. Since the maximum number is not exceeded, the sampler does not hit its limit on the number of leapfrog steps taken per iteration. This does not impact the validity of our estimates, but if we had exceeded the maximum `treedepth`, then our sampling may have been inefficient.
 
 ```{r}
 # pooled model
@@ -46,23 +48,18 @@ hwm_sampler_params = get_sampler_params(weibull_hier, inc_warmup = TRUE)
 summary(do.call(rbind, hwm_sampler_params), digits = 2)
 ```
 
-We can plot the log-posterior and acceptance NUTS acceptance statistics given divergent samples as follows. We first start with the pooled model and the censored model below.
+We can plot the log-posterior and acceptance NUTS acceptance statistics given divergent samples for all three of our models below. 
 
 ```{r}
 # plot divergence statistics for the pooled model
 bayesplot::mcmc_nuts_divergence(nuts_params(weibull_model), log_posterior(weibull_model))
 # plot divergence statistics for the censored model
 bayesplot::mcmc_nuts_divergence(nuts_params(weibull_cens), log_posterior(weibull_cens))
-```
-
-We find that there are no divergences following the warmup, which is great! Now moving on the hierarchical model, we find that there were some divergences.
-
-```{r}
 # plot divergence statistics for the hierarhical model
 bayesplot::mcmc_nuts_divergence(nuts_params(weibull_hier), log_posterior(weibull_hier))
 ```
 
-We find that divergent steps have a lower than average acceptance statistic to non-divergent steps, and also a lower log-posterior statistic. This means that even when we have a divergent step, it is not greatly affecting the posterior distribution, which is good!
+We find that there are no divergences following the warmup, which means our posterior estimates in our target distribution less likely to be biased.
 
 ## Intervals for posterior data
 
@@ -100,9 +97,7 @@ mcmc_areas(
 )
 ```
 
-Here we find more informative parameter estimates in terms of effect on the latent predictor than the uncensored data.
-
-For hierarchical model the results are shown down below.
+Here we find more informative parameter estimates in terms of effect on the latent predictor than the uncensored data. For hierarchical model the results are shown down below.
 
 ```{r}
 hier_posterior <- as.data.frame(weibull_hier)
@@ -117,6 +112,8 @@ mcmc_areas(
   point_est = "mean"
   )
 ```
+
+Once more we find a lot of regressor parameters including zero in their 80% credible interval, as well as several more significant parameters. We also find that the signficant parmeters differ slightly between institutions, suggesting that the hazard does change as a function of which institution a patient has been admitted to. Causality, of course, can not be concluded however.
 
 ## Posterior predictive checks
 
@@ -133,15 +130,15 @@ bayesplot::bayesplot_grid(
 )
 ```
 
-For pooled model the posterior results are similar to original survival survival distribution. Here, the censored data is not inclulded, so all the data is mainly concentrated near particular peak.
+For pooled model the posterior results are similar to original survival survival distribution. Here, the censored data is not inclulded, so all the data is mainly concentrated near particular peak. For censored model the posterior draws are similar to the original distribution. However, for some replicates the peak of the distribution is a little bit lower than for original data. For hierarchical model there are more broaden results, as here different institutional groups are taken into consideration. The predictive values in most cases follow the same distribution with, of course, some noise.
 
-For censored model the posterior draws are similar to the original distribution. However, for some replicates the peak of the distribution is a little bit lower than for original data.
-
-For hierarchical model there are more broaden results, as here different institutional groups are taken into consideration. The predictive values in most cases follow the same distribution with, of course, some noise.
+All in all, the posterior predictive distributions from our three models seem to match the original data, which suggests that the models are reasonable in their desgin and have produced good predictions.
 
 ## Model comparison using leave-one-out cross-validation and WAIC
 
-Having briefly examined the posterior distributions of our models, we now investigate the PSIS-LOO and WAIC values for model comparison, in the aim of determining which of our models is "best" for our purposes. Note, that PSIS-LOO is more accurate than WAIC criteria in our case since PSIS provides useful diagnostics as well as effective sample size and Monte Carlo estimates, as is mentioned in @loo.
+Having briefly examined the posterior distributions of our models, we now investigate the PSIS-LOO and WAIC values for model comparison, in the aim of determining which of our models is "best" for our purposes. This will be the model with the highest ELPD value. Note, that PSIS-LOO is more accurate than WAIC criteria in our case since PSIS provides useful diagnostics as well as effective sample size and Monte Carlo estimates, as is mentioned in @loo.
+
+The PSIS-LOO and WAIC values are computed in accordance with the vignettes from @loo below.
 
 ```{r}
 # perform approximate loo and psis-loo
@@ -164,12 +161,19 @@ hwm_loo <- loo(hwm_log_lik, r_eff = hwm_r_eff, cores = parallel::detectCores())
 hwm_waic <- waic(hwm_log_lik, cores = parallel::detectCores())
 ```
 
+We now plot the Pareto $k$ values for all data points from our three models below.
+
 ```{r}
 # plot pareto k diagnostics for the models
 plot(wm_loo, label_points = TRUE)
 plot(cwm_loo, label_points = TRUE)
 plot(hwm_loo, label_points = TRUE)
 ```
+
+
+We find once more than no data points have $\hat k > 0.7$ in either the pooled model without censored data or the hierarhical model, and thus we are able to conclude that the PSIS-LOO estimates are reliable. Some data points have $\hat k > 0.5$, which harms our confidence in the estimates slightly, but is still considered "ok". There is one data point with $\hat k > 0.7$ in the pooled model considering censored data, suggesting that there is potential bias in our model, and it might be over-estimating the predictive accuracy of the model. However, one high value is not enough for us to completely discard the model.
+
+Having established that our Pareto $\hat k$ values of sufficiently good to consider the PSIS-LOO estimates to be reliable, we move on to display them.
 
 ```{r}
 # compare loos
@@ -178,6 +182,12 @@ cwm_loo
 hwm_loo
 ```
 
+Comparing the ELPD, the best model (with the highest ELPD) is the hierarchical model, followed by the pooled model with censored data, and finally the pooled model without censored data. It is worth noting, however, that the censored model was trained on more data since it included censored patients. This means that in theory it should have learned more information than the other two, and is not necessarily comparable. However, since we find a better ELPD for the hierarchical model even given the difference in training data, we are comfortable concluding that it is the best of the three.
+
+Considering the `p_loo` values. For pooled the effictive number of parameters is ~5.5 and given that there 7 in the model, this suggests that our parameters are mostly significant. For the censored pooled model ~13 effective parameters are shown and we actually have 15 parameters, which is again demostrative of significant parameters. For the hierarchical model, the `p_loo` shows 6.6 parameters which is much fewer than were trained, and so we understand that most of them are not significant. In this sense, the censored model on pooled data has found the most effective parameters.
+
+We show also the WAIC values below, and achieve the same conclusion although understanding that our LOO values are more accurate.
+
 ```{r}
 # compare waics
 wm_waic
@@ -185,22 +195,17 @@ cwm_waic
 hwm_waic
 ```
 
-Considering the Pareto $k$-values, for pooled model all values are good. For the censored model one value is larger than 1, all others are good Hierarchical model shows better performance in that case, as for it all $k$-values are lower than $0.7$ like the pooled model.
-
-Comparing the ELPD, the best (largest) value is shown by hierarchical model, than comes the model with censored data, after that the pooled model. It is worth noting, however, that the censored model was trained on more data since it included censored patients. This means that in theory it should have learned more information than the other two, and would thus not be comparable. However, since we find a better ELPD for the hierarchical model even given the difference in training data, we are comfortable concluding that it is the best of the three.
-
-Considering the `p_loo` values. For pooled the optimal number of parameters is ~5.5 and given that there 7 in the model, the result is pretty close. For censored ~13 params are shown and we actually have 15 parameters, which is again pretty close. For the hierarchical model, the `p_loo` shows 6.6 parameters.
-
 ## Predictive performance assessment
 
-We will use ELPD with leave-one-out cross validation as is put forward in @loo to measure predictive performance on the basis that it is better than, for example, MSE for continuous variable prediction, as it evaluates the whole predictive distribution and not just the mean.
+We will use ELPD with leave-one-out cross validation as is put forward in @loo to measure predictive performance on the basis that it is better than, for example, MSE for continuous variable prediction, as it evaluates the whole predictive distribution and not just the mean. This is also the chosen metric is other similar literature.
 
-For the pooled model, $\text{ELPD} = -632$, for the pooled model censored using censored data, $\text{ELPD} = -527$, and for the hierarchical model, $\text{ELPD} = -486$. Knowing that all Pareto $\hat k$ values are reasonable, and that thus these values are reliable, we choose the hierarchical model as the best fitting model for our data.
+For the pooled model not using censored data, $\text{ELPD} = -632$, for the pooled model using censored data, $\text{ELPD} = -527$, and for the hierarchical model, $\text{ELPD} = -486$. Knowing that all Pareto $\hat k$ values are reasonable, and that thus these values are reliable, we choose the hierarchical model as the best fitting model for our data.
 
 ## Prior sensitivity analysis
 
-The sensitivity of the posterior distribution of our sampled parameters to the proposed prior distribution was checked for models.
+The sensitivity of the posterior distribution of our sampled parameters to the proposed prior distribution was checked for all three models with different distribution parameters, and in some cases different distributions.
 
-The dataset is not very small and posterior inferences based on large numbers of MCMC iterations tend to be not particularly sensitive to the prior distribution. The parameters of half-Cauchy were changed a bit, as well as the Normal distribution for betas. The combinations tested were: $\text{Cauchy}(0,8)$ and $\text{Normal}(0,10)$, $\text{Cauchy}(0,2)$ and $\text{Normal}(0,10)$, $\text{Cauchy}(0,5)$ and $\text{Normal}(0,20)$, $\text{Cauchy}(0,8)$ and $\text{Normal}(0,20)$. The results in most cases remained the same.
+The dataset is not very small and posterior inferences are based on large numbers of MCMC iterations which do not tend to be particularly sensitive to the prior distribution. The parameters of half-Cauchy were changed a bit, as well as the Normal distribution for betas. The combinations tested were: $\text{Cauchy}(0,8)$ and $\text{Normal}(0,10)$, $\text{Cauchy}(0,2)$ and $\text{Normal}(0,10)$, $\text{Cauchy}(0,5)$ and $\text{Normal}(0,20)$, $\text{Cauchy}(0,8)$ and $\text{Normal}(0,20)$. The results in most cases remained the same.
 
-In order to test the motivation set out in previous sections and in @taumain, the variance hyperparameter for the hierarchical model was changed to a Half-Cauchy (the suggested priors for fewer hierarchical groups), and in this case convergence was more difficult. As such, the rigidity and relative strength of the $\text{Gamma}(1, 1)$ helps convergence in this case with more groups. It is also worth noting, however, that changing the prior over the global $\alpha$ parameter from Half-Cauchy to Gamma has a large impact on the final result. We can draw from this information that the relative flexibility afforded by the weakly-informative Half-Cauchy prior allows the data to express itself more compared to the stronger and less flexible Gamma prior.
+In order to test the motivation set out in previous sections and in @taumain regarding the prior over the hyperparameter $\sigma_\beta$ in the hierarchical model, its hyperprior was changed to a Half-Cauchy (the suggested priors for fewer hierarchical groups in), and in this case convergence was more difficult. As such, the rigidity and relative strength of the $\text{Gamma}(1, 1)$ helps convergence in this case with more groups and fewer data points for each group. It is also worth noting, however, that changing the prior over the global $\alpha$ parameter from Half-Cauchy to Gamma has a large impact on the final result, and ultimately did not result in convergence. We can draw from this information that the relative flexibility afforded by the weakly-informative Half-Cauchy prior allows the data to express itself more compared to the stronger and less flexible Gamma prior.
+

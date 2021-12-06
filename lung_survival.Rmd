@@ -1,6 +1,6 @@
 ---
 title: "**Lung Cancer Survival Prediction with Bayesian Generalised Linear Models**"
-author: "Yann McLatchie, Arina Odnoblyudova"
+author: "Yann McLatchie and Arina Odnoblyudova"
 bibliography: bda.bib
 geometry: margin=2cm, top=1in, bottom=1in
 header-includes:

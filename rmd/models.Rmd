@@ -1,6 +1,6 @@
 # Description of models
 
-In the following section, we will motivate and define mathematically four Generalised Linear Models (GLMs) implemented in Stan and using BRMS in two cases.
+In the following section, we will motivate and define mathematically three Generalised Linear Models (GLMs) implemented in Stan for survival time prediction. We begin by importing the necessary packages and setting a random seed for reproducibility.
 
 ```{r, message=FALSE, warning=FALSE}
 # install libraries
@@ -21,7 +21,7 @@ set.seed(2021)
 
 ## Weibull without censored data
 
-Let $y \sim \text{Weibull}(\alpha, \sigma)$, so that
+Our first model will be a pooled model, not considering any censored data points. Let $y \sim \text{Weibull}(\alpha, \sigma)$, so that
 $$
 \text{Weibull}(y|\alpha,\sigma) =
 \frac{\alpha}{\sigma} \, \left( \frac{y}{\sigma} \right)^{\alpha - 1}
@@ -32,49 +32,51 @@ for $y \in [0,\infty), \alpha \in \mathbb{R}^+,$ and $\sigma \in \mathbb{R}^+$.
 
 ### Motivating the distribution
 
-The Weibull distribution is often used as a more flexible and complex alternative to the semi-parametric proportional hazard Cox model for modelling time to failure events, since the hazard rate is not taken to be constant with time.
+The Weibull distribution is often used as a more flexible and complex alternative to the semi-parametric proportional hazard Cox model for modelling time to failure events, since the hazard rate is not taken to be constant with time. We will use this as our base for all models in this analysis to differentiate ourselves from previous analyses.
 
 ### The Weibull distribution as a member of the Exponential family
 
 A probability distribution $f(x\vert\vartheta)$ is a member of the Exponential family if it can be written in the form
 $$
-f(x\vert\vartheta) = h(x)\exp[\eta \cdot T(x) - A(\vartheta)],
+f(y\vert\vartheta) = h(x)\exp[\eta(\vartheta) \cdot T(x) - A(\vartheta)],
 $$
-For some arbitrary parameter functions $h(\cdot), T(\cdot), A(\cdot)$, and canonical parameter $\eta$. Now take $\alpha$ fixed and finite, then it can be shown that this distribution belongs to the exponential family since we can write it's probability density function
+For some arbitrary parameter functions $h(\cdot), T(\cdot), A(\cdot)$, and canonical parameter $\eta(\vartheta)$ as a function of the parameters $\vartheta = (\sigma, \alpha)^T$. Now take $\alpha$ fixed and finite, then it can be shown that the Weibull distribution belongs to the exponential family since we can write it's probability density function as
 $$
 \text{Weibull}(y|\sigma) ={\alpha y^{\alpha -1}}\exp(-y^{\alpha}\sigma^{-\alpha}-\alpha\log\sigma),
 $$
 with
 \begin{align*}
 b(y)&={\alpha y^{\alpha -1}} \\
-\eta&=\sigma^{-\alpha}\\
+\eta(\vartheta)&=\sigma^{-\alpha}\\
 T(y)&=-y^{\alpha} \\
 a(\eta)&=\alpha\log\sigma.
 \end{align*}
+This will make inference in the future easier for us.
 
 ### Defining the link function
 
-Looking at our sufficient statistic $\eta=\sigma^{-\alpha}$, it can be shown that
+Looking at our canonical statistic $\eta=\sigma^{-\alpha}$, it can be shown that
 $$
 \sigma=\exp{({\frac{\log\eta}{-\alpha}})}
 $$
-where we construct $\eta = \exp(\boldsymbol X\beta)$ so that $\eta$ is strictly positive. Thus we choose a log link function for our GLM such that
+where we construct $\eta = \exp(\boldsymbol X\beta)$ so that $\eta$ is always strictly positive and the logarithm is defined. Thus we choose a log link function for our GLM such that
 $$
-\sigma = \exp(-\frac{\boldsymbol X\beta}{\alpha}).
+\sigma = \exp(-\frac{\boldsymbol X\beta}{\alpha}),
 $$
+which resembles a vanilla logarithmic inverse link function, with the additional $alpha$ term and negation.
 
 ### Priors
 
-In our Stan model, we will enforce two priors over each of the regressors in the linear model, and the shape parameter of our resulting Weibull distribution. Mathematically, where we have $N$ data points and $M$ covariates, the model is defined as
+In our Stan model, we will enforce two priors over each of the regressors in the linear model, $\beta$, and the shape parameter $\alpha$ of our Weibull distribution. Mathematically, where we have $N$ data points and $M$ covariates, the model is defined as
 \begin{align*}
 y_i &\sim \text{Weibull}(\sigma, \alpha)\,,\quad i = 1,\dots,N,\\
 \alpha &\sim \text{Half-Cauchy}(5),\\
 \sigma &= \exp\left ( -\frac{\boldsymbol X \beta}{\alpha}\right ),\\
 \beta_j \sim& N(0, 1)\,,\quad j=1,\dots,M.\\
 \end{align*}
-The choice of a Half-Cauchy prior is motivated by @taumain, so that inferences are sensitive to the choice of weakly-informative priors. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In short, it acts as an appropriate weakly-informative prior satisfying the positive constraint, and given that we expect the value of $\alpha$ to be below 10. Our Gaussian prior over the regressors is easily motivated by the parameterisation of the data. We will mean-center the design matrix before performing our regression in a `transformed data` block. This standardisation will hopefully reduce variance in our regressors and make learning their weights easier. We expect the weights of the regressors to be close to zero, and can be negative, making this an appropriate weakly-informative prior.
+The choice of a Half-Cauchy prior is motivated by @taumain, so that the posterior is less sensitive to the choice of weakly-informative prior since it is more flexible than the Gamma alternative and the data can express themselves more freely. Note that this is a specific case of the of the conditionally-conjugate folded-noncentral-t family of prior distributions. In short, it acts as an appropriate weakly-informative prior satisfying the positive constraint, and given that we expect the value of $\alpha$ to be below 10. Our Gaussian prior over the regressors is easily motivated by the parameterisation of the data. We will mean-center the design matrix before performing our regression in a `transformed data` block. This standardisation will hopefully reduce variance in our regressors and make learning their weights easier. We expect the weights of the regressors to be close to zero, and we allow them to be negative, making this an appropriate prior. In fact, the fact that the variance is not very large should aid convergence later.
 
-In this pooled model, we model these parameters the same across all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in. This is seen visually below in the directed acyclic graph below.
+In this pooled model, we model these parameters using data from all institutions. Intuitively, this means that we expect the hazard to be equivalent regardless of which institution a patient is in. This is seen visually below in the directed acyclic graph below.
 
 ```{r, echo=FALSE, out.width="50%", fig.align="center"}
 knitr::include_graphics("./rmd/pooled.pdf")
@@ -82,7 +84,7 @@ knitr::include_graphics("./rmd/pooled.pdf")
 
 ### Implemented in Stan
 
-Below, we fit the model in Stan and output the Stan code for the reader.
+Below, we fit the model in Stan and output its code for the reader. Convergence and other diagnostics will be presented in the following section for all models.
 
 ```{r weibull, warning=FALSE, message=FALSE}
 # build dataset from only those non-censored data points
@@ -148,30 +150,31 @@ If $\lambda=X\beta$, than log-likelihood function can be expressed as,
 $$
 l(\alpha,\beta|t,x)=\sum\limits_{i = 1}^nv_{i}(\log(\alpha)+(\alpha-1)log(t_{i})+X_{i}\beta)-\exp(X_{i}\beta)t_{i}^{\alpha}.
 $$
-If the data are censored, log-likelihood consists only of the logarithm of the survival function. In Stan this can be expressed with `weibull_lccdf()` function, corresponding to the log of the Weibull complementary cumulative distribution function of $y$ given shape $\alpha$ and scale $\sigma$, and it is exactly the logarithm of survival function. For clarity, complementary cumulative distribution function is
+If the data are censored, then the log-likelihood is simply the logarithm of the survival function. In Stan this can be expressed with `weibull_lccdf()` function, corresponding to the log of the Weibull complementary cumulative distribution function of $y$ given shape $\alpha$ and scale $\sigma$, and it is exactly the logarithm of survival function. For clarity, the complementary cumulative distribution function is
 $$
 \bar{F}_{X}(x)=P(X>x)=1-F_{X}(x),
 $$
-where $F_{X}(x)$ is the cumulative distribution function.
+where $F_{X}(x)$ is the cumulative distribution function of a random variable.
 
 ### Priors
 
-The same priors are used for the censored model as for the pooled model. Even we are not experts-oncologists, we know that typically person's life with advanced lung cancer is a little bit lower than a year, some patients live even for three years. The chosen prior is suitable, as it allows to produce survival time values, which are not too strict and at the same time really unlike to be larger than 5 years, for example.
+The same priors are used for the censored model as for the pooled model. Even we are not expert oncologists, we know that typically person's life with advanced lung cancer is a little bit lower than a year, some patients live even for three years. The chosen prior is suitable, as it allows to produce survival time values, which are not too strict and at the same time really unlike to be larger than 5 years, for example.
 
-Chosen priors do not contribute strongly to the posterior, so the data can "speak for itself". Algebraically then, the model is given as
+Chosen priors do not contribute strongly to the posterior, so the data can express themselves. Algebraically then, the model is given as
 \begin{align*}
 y_i &\sim \begin{cases}\text{Weibull}(\sigma, \alpha)\,,\quad \text{if }y_i\text{ is observed},\\
 \text{log-likelihood Weibull}(\sigma, \alpha)\,,\quad \text{if }y_i\text{ is censored},
 \end{cases}\\
 \alpha &\sim \text{Half-Cauchy}(5),\\
 \sigma &= \exp\left ( -\frac{\boldsymbol X \beta}{\alpha}\right ),\\
-\beta_j \sim& N(0, 1)\,.\\
+\beta_j &\sim N(0, 1)\,.\\
 \end{align*}
 Note that this is graphically equivalent to the pooled model.
 
 ### Implemented in Stan
 
-Data preparation
+We once more execute some data preprocessing.
+
 ```{r, warning=FALSE, message=FALSE}
 # read lung cancer data from "survival' library
 data("cancer", package = "survival")
@@ -201,7 +204,8 @@ Xobs = as.matrix(Xobs[-c(1,2,3)])
 yobs=X$time[X$status==1]
 ```
 
-Building data list for Stan model
+And collate the data in such a way as to present them to the Stan model.
+
 ```{r, warning=FALSE, message=FALSE, comment=FALSE}
 data_model = list(
   yobs = yobs,
@@ -214,7 +218,8 @@ data_model = list(
 )
 ```
 
-Running model
+We are now able to run the model and display the Stan code. 
+
 ```{r censored, warning=FALSE, message=FALSE}
 # compile and run censored model
 cwm = rstan::stan_model(file = "../stan/weibull_censored.stan")
@@ -224,15 +229,14 @@ print(cwm)
 weibull_cens = rstan::sampling(cwm, data = data_model, iter = 10000)
 ```
 
-
 ## Hierarchical Weibull without censored data
 
-Here we implement a model with some global shape parameter to be learned, but independent regressor parameters for each institution. Once more, we ignore the censored data. By virtue of this, we need not worry about complex distribution functions, but do sacrifice the number of data points we can learn from for each institution. We now consider our model in terms of the same $N$ data points and $M$ regressors, but we will estimate our covariate's weight according to the institution, of which we have $J$ in total. Thus our model is defined as
+Here we implement a model with some global shape parameter $\alpha$ to be learned as in the pooled model, but independent regressor parameters $\beta_j$ for each institution $j$. Once more, we ignore the censored data. By virtue of this, we need not worry about the more complex distribution functions shown above, but we do sacrifice the number of data points we can learn from for each institution. We now consider our model in terms of the same $N$ data points and $M$ regressors, but we will estimate our covariate's weight according to the institution, of which we have $J$ in total. Thus our model is defined as
 \begin{align*}
 y_{ij} &\sim \text{Weibull}(\sigma_j, \alpha)\,,\quad i = 1,\dots,N,\,j= 1,\dots,J\\
 \alpha &\sim \text{Half-Cauchy}(5),\\
 \sigma &\propto \boldsymbol X \beta,\,\text{via previously seen link function}\\
-\beta_{mj} \sim& N(\mu_\beta, \sigma_\beta)\,,\quad m=1,\dots,M,\\
+\beta_{mj} &\sim N(\mu_\beta, \sigma_\beta)\,,\quad m=1,\dots,M,\\
 \mu_\beta &\sim N(0, 1),\\
 \sigma_\beta &\sim \text{Gamma}(1, 1).
 \end{align*}
@@ -244,11 +248,15 @@ knitr::include_graphics("./rmd/hier.pdf")
 
 ### Defining the link function
 
+The link function used is the same as that shown in the first model.
+
 ### Priors
 
-The same global priors are used for the hierarchical model as the pooled model. We motivate the Gamma hyperprior over the variance of $\beta$ with @taumain, since we have 7 groups a Half-Cauchy will be too flexible to different group whereas a Gamma will be more stable for more groups. We have a standard Gaussian hyperprior over the the mean of $\beta$, which we can motivate since the value of $\beta$ can be either positive or negative so this allows the groups to express themselves either way.
+The same global priors are used for the hierarchical model as the pooled model. We motivate a Gamma hyperprior over the variance of $\beta$ with @taumain, since we have 7 different groups, a Half-Cauchy will be too sensitive to different group data whereas a Gamma will be more stable for more groups and aid convergence. We have a standard Gaussian hyperprior over the the mean of $\beta$, which we can motivate since the value of $\beta$ can be either positive or negative so this allows the groups to express themselves either way, and this is a standard hyperprior over a mean we assume to have zero mean in literature.
 
 ### Implemented in Stan
+
+We once more engage in data preparation and run the Stan model, displaying the code, before moving on to the next section where we will discuss the diagnostics of each model.
 
 ```{r hier_weibull, warning=FALSE, message=FALSE}
 # build dataset from only those non-censored data points
